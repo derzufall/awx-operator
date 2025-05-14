@@ -1,5 +1,6 @@
 package de.wolkenzentrale.operator.awx.interfaces.service;
 
+import de.wolkenzentrale.operator.awx.interfaces.awx.service.AwxProjectService;
 import de.wolkenzentrale.operator.awx.interfaces.dto.Project;
 import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectInfo;
 import org.junit.jupiter.api.*;

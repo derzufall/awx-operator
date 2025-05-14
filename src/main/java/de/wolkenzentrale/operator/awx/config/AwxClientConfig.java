@@ -1,7 +1,8 @@
 package de.wolkenzentrale.operator.awx.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.wolkenzentrale.operator.awx.interfaces.client.AwxClient;
+
+import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

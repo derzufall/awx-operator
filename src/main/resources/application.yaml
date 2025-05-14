@@ -1,0 +1,14 @@
+spring.application.name: awx-resource-operator
+
+# Default AWX client configuration
+awx:
+  baseUrl: http://localhost:8052
+  username: admin
+  password: password
+
+# Default logging configuration
+logging:
+  level:
+    de.wolkenzentrale.operator.awx: DEBUG
+    org.springframework.web.reactive: INFO 
+    

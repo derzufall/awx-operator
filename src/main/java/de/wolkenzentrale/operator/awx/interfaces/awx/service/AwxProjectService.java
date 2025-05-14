@@ -1,6 +1,6 @@
-package de.wolkenzentrale.operator.awx.interfaces.service;
+package de.wolkenzentrale.operator.awx.interfaces.awx.service;
 
-import de.wolkenzentrale.operator.awx.interfaces.client.AwxClient;
+import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.interfaces.dto.Project;
 import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectInfo;
 import de.wolkenzentrale.operator.awx.util.RetryMono;

@@ -1,4 +1,4 @@
-package de.wolkenzentrale.operator.awx.interfaces.client;
+package de.wolkenzentrale.operator.awx.interfaces.awx.client;
 
 import de.wolkenzentrale.operator.awx.interfaces.dto.Project;
 import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectInfo;
