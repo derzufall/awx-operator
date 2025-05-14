@@ -42,14 +42,14 @@ public class AwxClientConfig {
 
     @Bean
     public WebClient awxWebClient(ExchangeStrategies exchangeStrategies) {
-        log.info("Configuring AWX WebClient with baseUrl: {}", awxBaseUrl);
+        log.info("🌐 Configuring AWX WebClient with baseUrl: {}", awxBaseUrl);
         
         String basicAuth = username + ":" + password;
         String encodedAuth = Base64.getEncoder().encodeToString(basicAuth.getBytes(StandardCharsets.UTF_8));
         String authHeaderValue = "Basic " + encodedAuth;
         
         // Log the ObjectMapper configuration
-        log.info("Using ObjectMapper with property naming strategy: {}", 
+        log.info("🔧 Using ObjectMapper with property naming strategy: {}", 
                  objectMapper.getPropertyNamingStrategy() != null ? 
                  objectMapper.getPropertyNamingStrategy().getClass().getSimpleName() : "default");
         
@@ -74,7 +74,7 @@ public class AwxClientConfig {
         HttpServiceProxyFactory factory = builder
                 .build();
                 
-        log.info("Creating AWX API client.");
+        log.info("🔌 Creating AWX API client.");
         
         // Create the client interface proxy
         return factory.createClient(AwxClient.class);

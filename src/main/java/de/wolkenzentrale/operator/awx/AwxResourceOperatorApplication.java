@@ -9,8 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AwxResourceOperatorApplication {
 
     public static void main(String[] args) {
-        log.info("Starting AWX Resource Operator...");
+        log.info("🚀 Starting AWX Resource Operator...");
         SpringApplication.run(AwxResourceOperatorApplication.class, args);
-        log.info("AWX Resource Operator started successfully!");
+        log.info("✨ AWX Resource Operator started successfully! 🎉");
     }
 } 

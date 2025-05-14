@@ -65,7 +65,7 @@ public class RetryMono<T> {
                 return false;
             })
             .doBeforeRetry(retrySignal -> 
-                log.warn("Retrying {} after error. Attempt: {}", 
+                log.warn("🔄 Retrying {} after error. Attempt: {}", 
                     operationName, retrySignal.totalRetries() + 1))
         );
     }

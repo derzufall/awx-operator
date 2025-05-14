@@ -30,17 +30,17 @@ public class RemoteTestConfig {
     @Bean
     public CommandLineRunner logRemoteTestConfig() {
         return args -> {
-            log.info("Remote Test Configuration:");
-            log.info("AWX Base URL: {}", baseUrl);
-            log.info("AWX Username: {}", username);
-            log.info("AWX Password: {}", username != null ? "[PROVIDED]" : "[MISSING]");
+            log.info("🧪 Remote Test Configuration:");
+            log.info("🔗 AWX Base URL: {}", baseUrl);
+            log.info("👤 AWX Username: {}", username);
+            log.info("🔐 AWX Password: {}", username != null ? "[PROVIDED]" : "[MISSING]");
             
             if (baseUrl == null || baseUrl.isBlank()) {
-                log.error("AWX Base URL is not configured properly!");
+                log.error("⛔ AWX Base URL is not configured properly!");
             }
             
             if (username == null || username.isBlank()) {
-                log.warn("AWX Username is not configured! Tests may fail if authentication is required.");
+                log.warn("⚠️ AWX Username is not configured! Tests may fail if authentication is required.");
             }
         };
     }
