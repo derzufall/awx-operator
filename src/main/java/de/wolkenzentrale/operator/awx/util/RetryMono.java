@@ -58,8 +58,7 @@ public class RetryMono<T> {
     public Mono<T> run() {
         return operation.retryWhen(Retry.backoff(MAX_RETRIES, INITIAL_DELAY)
             .filter(throwable -> {
-                if (throwable instanceof WebClientResponseException) {
-                    var ex = (WebClientResponseException) throwable;
+                if (throwable instanceof WebClientResponseException ex) {
                     int statusCode = ex.getStatusCode().value();
                     return statusCode >= 400 && statusCode < 600;
                 }

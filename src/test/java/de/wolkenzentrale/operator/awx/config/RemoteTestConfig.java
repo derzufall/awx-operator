@@ -23,7 +23,7 @@ public class RemoteTestConfig {
     
     @Value("${awx.username}")
     private String username;
-    
+
     /**
      * Log connection details on startup
      */
