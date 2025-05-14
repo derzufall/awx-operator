@@ -1,0 +1,11 @@
+# Test configuration for AWX client
+awx:
+  baseUrl: http://test-awx:8080
+  username: test-user
+  password: test-password
+
+# Logging configuration for tests
+logging:
+  level:
+    de.wolkenzentrale.operator.awx: DEBUG
+    org.springframework.web.reactive: INFO

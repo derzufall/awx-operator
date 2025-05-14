@@ -1,0 +1,17 @@
+# Remote integration test configuration
+spring:
+  application:
+    name: awx-operator-remote-tests
+
+# AWX connection properties for remote testing
+awx:
+  baseUrl: http://82.165.203.242:32060
+  username: ${AWX_USERNAME:admin}
+  password: ${AWX_PASSWORD:KUbGXPzXYJVnetOayP8kybxcpenMGt7Y}
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    de.wolkenzentrale.operator: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG 

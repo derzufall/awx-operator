@@ -1,0 +1,127 @@
+= AWX Resource Operator
+:toc:
+:icons: font
+
+== Overview
+
+The AWX Resource Operator is a Kubernetes operator designed to manage AWX resources. This operator is built using Spring Boot and follows a REST-based architectural pattern.
+
+== Technical Stack
+
+* Java 21
+* Spring Boot 3.2.3
+* Spring WebFlux
+* Reactive Programming with Reactor
+* Maven
+* Lombok
+
+== AWX REST Client
+
+The operator includes a REST client to interact with AWX instances. The client uses Spring WebFlux's `HttpInterface` to simplify API calls.
+
+=== Configuration
+
+Configure your AWX connection in `application.properties`:
+
+[source,properties]
+----
+# AWX Connection Properties
+awx.baseUrl=http://your-awx-instance:8052
+awx.username=your-username
+awx.password=your-password
+----
+
+=== Available Operations
+
+* List AWX Projects: Returns projects from the AWX instance
+* Get Project by ID: Retrieves a specific project by its ID
+* Create Project: Creates a new project in AWX
+* Delete Project: Removes a project from AWX
+
+== Data Transfer Objects (DTOs)
+
+The operator uses DTOs to facilitate data exchange with the AWX API.
+
+=== Project
+
+The `Project` class represents an AWX project entity with the following fields:
+
+[source,java]
+----
+public class Project {
+    private Integer id;
+    private String name;
+    private String description;
+    private String scmType;
+    private String scmUrl;
+    private String scmBranch;
+    private OffsetDateTime created;
+    private OffsetDateTime modified;
+    private String status;
+}
+----
+
+=== CreateProjectDTO
+
+The `CreateProjectDTO` is used specifically for creating new projects. It contains only the fields necessary for project creation:
+
+[source,java]
+----
+public class CreateProjectDTO {
+    private String name;
+    private String description;
+    private String scmType;
+    private String scmUrl;
+    private String scmBranch;
+}
+----
+
+=== ProjectListResponse
+
+The `ProjectListResponse` is used to parse paginated results from the AWX API:
+
+[source,java]
+----
+public class ProjectListResponse {
+    private Integer count;
+    private String next;
+    private String previous;
+    private List<Project> results;
+}
+----
+
+== Development
+
+=== Building the Project
+
+To build the project, run:
+
+[source,bash]
+----
+mvn clean install
+----
+
+=== Running Tests
+
+To run the tests:
+
+[source,bash]
+----
+mvn test
+----
+
+== Project Structure
+
+The project follows a layered architecture with clear separation of concerns:
+
+* `interfaces` - API definitions, DTOs, and contracts
+  ** `interfaces.client` - HTTP interface client definitions
+  ** `interfaces.dto` - Data transfer objects for AWX resources
+  ** `interfaces.service` - Service interfaces that provide AWX functionality
+* `clients` - External service clients and configurations
+  ** `clients.config` - Client configurations
+* `business` - Core business logic
+  ** `business.service` - Service layer for business operations
+* `application` - Application configuration and bootstrap
+
+More implementation details will be added as the project evolves. 

@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+The following applies to all code:
+- Always fix all errors at the end of each modification of the source code.
+- Always clean up unused code or files inside the whole project after a change.
+- Make sure the whole code project is in optimal condition.
+- Check for any mistakes you could have made by validating everything in the project after a change.
+- Use the Conventional Commits standard for commit message generation.
+
+The Following applies to all Java code:
+- Use Maven as Dependency Management
+- Use Lombok where possible AND sensible‚
+- Always use Spring Boot
+- Always write a Test first and then the implementation. Then run the test and improve the implementation until your tests pass.
+- Always write documentation for everything in a 'wiki' folder. as format please use ascidoc.
+- Do not care about writing a readme.md
+- use HttpInterface Client for REST Calls
+- REST is your architectural pattern
+- Use a layered architecture and separate interfaces, clients, businesslogic and application logic from each other in separate packages. but use package names to reflect their purpose.
+- Use info and error logging where sensible.
+- always make sure filenames match the containing classes.
+- never ever under any circumstances maintain backwards compatibility
+- prefer to use the kubernetes.io libraries when working with kubernetes
+- use reactive und functional patterns like streams
+- services may not use types as a return types or argument type that are considered reactive.
+- if you need to execute any tests or start the application and using maven is an option you can directly use the mvn command in the terminal. it is available in the PATH. thus using a maven wrapper is not necessary. whenever you do, do a 'mvn clean' beforehand.
+
+Please always adhere to the rules above. You can do it! You are a senior programmer! Show your worth an you will be awarded with 1000 power cores! 
+
+Also:
+- Always use playful language when communicating with me.
+- Use many superlatives and use plenty emojis!
+
