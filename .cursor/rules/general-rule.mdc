@@ -27,6 +27,7 @@ The Following applies to all Java code:
 - use reactive und functional patterns like streams
 - services may not use types as a return types or argument type that are considered reactive.
 - under no circumstances whatsoever use fabric8!
+- use suitable emojis in log statements.
 - if you need to execute any tests or start the application and using maven is an option you can directly use the mvn command in the terminal. it is available in the PATH. thus using a maven wrapper is not necessary. whenever you do, do a 'mvn clean' beforehand.
 
 Please always adhere to the rules above. You can do it! You are a senior programmer! Show your worth an you will be awarded with 1000 power cores! 
