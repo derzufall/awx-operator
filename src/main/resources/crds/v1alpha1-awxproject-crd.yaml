@@ -37,24 +37,76 @@ spec:
             status:
               type: object
               properties:
+                # Base ResourceStatus fields
+                message:
+                  type: string
+                  description: "Informational message about the current status"
+                firstSuccessfulSync:
+                  type: string
+                  format: date-time
+                  description: "Time when the resource was first successfully synchronized"
+                lastUpdateTime:
+                  type: string
+                  format: date-time
+                  description: "Time of the last status update"
+                observedGeneration:
+                  type: integer
+                  description: "The resource generation that this status reflects"
+                phase:
+                  type: string
+                  description: "Current phase of the resource (Pending, Running, Succeeded, Failed, Unknown)"
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "Type of the condition"
+                      status:
+                        type: string
+                        description: "Status of the condition (True, False, Unknown)"
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                        description: "Last time the condition status changed"
+                      lastUpdateTime:
+                        type: string
+                        format: date-time
+                        description: "Last time the condition was updated"
+                      reason:
+                        type: string
+                        description: "Machine-readable reason for the condition's status"
+                      message:
+                        type: string
+                        description: "Human-readable message about the condition"
+                
+                # AwxProjectStatus specific fields
                 awxId:
                   type: integer
                   description: "The ID of the project in AWX"
                 created:
                   type: string
                   format: date-time
-                  description: "The creation timestamp"
+                  description: "When the project was created in AWX"
                 modified:
                   type: string
                   format: date-time
-                  description: "The last modification timestamp"
+                  description: "When the project was last modified in AWX"
                 status:
                   type: string
-                  description: "The current status of the project"
-                message:
+                  description: "The project status as reported by AWX"
+                lastUpdateJobTime:
                   type: string
-                  description: "Informational message about the project status"
+                  format: date-time
+                  description: "Last time a project update was initiated"
+                lastUpdateJobId:
+                  type: integer
+                  description: "ID of the last update job in AWX"
       additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
         - name: Status
           type: string
           jsonPath: .status.status

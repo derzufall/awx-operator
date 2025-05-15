@@ -38,20 +38,71 @@ spec:
             status:
               type: object
               properties:
-                connectionStatus:
-                  type: string
-                  description: "The current connection status to the AWX instance"
+                # Base ResourceStatus fields
                 message:
                   type: string
-                  description: "Informational message about the connection status"
+                  description: "Informational message about the current status"
+                firstSuccessfulSync:
+                  type: string
+                  format: date-time
+                  description: "Time when the resource was first successfully synchronized"
+                lastUpdateTime:
+                  type: string
+                  format: date-time
+                  description: "Time of the last status update"
+                observedGeneration:
+                  type: integer
+                  description: "The resource generation that this status reflects"
+                phase:
+                  type: string
+                  description: "Current phase of the resource (Pending, Running, Succeeded, Failed, Unknown)"
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "Type of the condition"
+                      status:
+                        type: string
+                        description: "Status of the condition (True, False, Unknown)"
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                        description: "Last time the condition status changed"
+                      lastUpdateTime:
+                        type: string
+                        format: date-time
+                        description: "Last time the condition was updated"
+                      reason:
+                        type: string
+                        description: "Machine-readable reason for the condition's status"
+                      message:
+                        type: string
+                        description: "Human-readable message about the condition"
+                
+                # AwxInstanceStatus specific fields
+                connectionStatus:
+                  type: string
+                  description: "The current connection status to the AWX instance (Connected, Disconnected, Error)"
                 lastConnected:
                   type: string
                   description: "Timestamp of last successful connection"
+                awxVersion:
+                  type: string
+                  description: "AWX version reported by the instance"
+                failedConnectionAttempts:
+                  type: integer
+                  description: "Number of failed connection attempts"
       additionalPrinterColumns:
         - name: URL
           type: string
           jsonPath: .spec.url
-        - name: Status
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Connection
           type: string
           jsonPath: .status.connectionStatus
         - name: Age
