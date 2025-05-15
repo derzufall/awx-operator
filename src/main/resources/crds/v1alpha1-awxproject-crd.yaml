@@ -18,7 +18,20 @@ spec:
                 - name
                 - scmType
                 - scmUrl
+                - awxConnectionRef
               properties:
+                awxConnectionRef:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      description: "Name of the AwxConnection resource"
+                    namespace:
+                      type: string
+                      description: "Namespace of the AwxConnection resource. If not specified, defaults to the same namespace as this resource."
+                  description: "Reference to the AwxConnection resource for this project"
                 name:
                   type: string
                   description: "The name of the AWX project"
@@ -113,6 +126,9 @@ spec:
         - name: AWX ID
           type: integer
           jsonPath: .status.awxId
+        - name: Connection
+          type: string
+          jsonPath: .spec.awxConnectionRef.name
         - name: Age
           type: date
           jsonPath: .metadata.creationTimestamp

@@ -3,9 +3,10 @@ kind: AwxProject
 metadata:
   name: example-project
   namespace: default
-  labels:
-    awx-connection: my-awx  # Reference to the AwxConnection CR
 spec:
+  awxConnectionRef:
+    name: my-awx
+    # namespace: default  # Optional: defaults to same namespace as this resource
   name: "Example Project"
   description: "An example Ansible project managed by the AWX Operator"
   scmType: "git"

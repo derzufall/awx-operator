@@ -86,9 +86,10 @@ kind: AwxProject
 metadata:
   name: example-project
   namespace: default
-  labels:
-    awx-connection: my-awx  # Reference to the AwxConnection CR
 spec:
+  awxConnectionRef:
+    name: my-awx
+    # namespace: default  # Optional: defaults to same namespace as this resource
   name: "Example Project"
   description: "An example project managed by the AWX Operator"
   scmType: "git"
@@ -98,6 +99,9 @@ spec:
 
 The `spec` field contains the following properties:
 
+* `awxConnectionRef` - Reference to the AwxConnection resource to use for this project
+  * `name` - Name of the AwxConnection resource (required)
+  * `namespace` - Namespace of the AwxConnection resource (optional, defaults to same namespace)
 * `name` - The name of the AWX project
 * `description` - Description of the AWX project
 * `scmType` - The SCM type for the project (git, svn, etc.)
@@ -114,3 +118,24 @@ In addition to the common status fields, the AwxProject status includes:
 * `status` - The project status as reported by AWX
 * `lastUpdateJobTime` - Last time a project update was initiated
 * `lastUpdateJobId` - ID of the last update job in AWX 
+
+## Project Models
+
+The AWX Operator uses a layered approach to handle projects:
+
+1. `Project` - Plain model for AWX API communication
+2. `ProjectSpec` - Enhanced model for Kubernetes CRD with extra fields like `awxConnectionRef`
+
+This separation allows us to:
+1. Keep AWX API models clean and compatible with the AWX REST API
+2. Add Kubernetes-specific fields needed for CRD functionality
+3. Easily convert between the two with the `toProject()` method
+
+### Model Inheritance
+
+```
+Project (AWX API model)
+    ^
+    |
+    +-- ProjectSpec (Kubernetes CRD model with awxConnectionRef)
+``` 

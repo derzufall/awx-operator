@@ -1,7 +1,7 @@
 package de.wolkenzentrale.operator.awx.model.crd.awx;
 
 import de.wolkenzentrale.operator.awx.model.common.Connection;
-import de.wolkenzentrale.operator.awx.model.common.Project;
+import de.wolkenzentrale.operator.awx.model.crd.ProjectSpec;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.ResourceList;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
@@ -19,7 +19,7 @@ public final class AwxTypes {
     /**
      * Type alias for AwxProject
      */
-    public static class AwxProject extends KubernetesResource<Project, AwxProjectStatus> {
+    public static class AwxProject extends KubernetesResource<ProjectSpec, AwxProjectStatus> {
     }
     
     /**

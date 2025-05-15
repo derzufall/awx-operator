@@ -4,6 +4,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
 
 import de.wolkenzentrale.operator.awx.model.common.Connection;
+import de.wolkenzentrale.operator.awx.model.common.CrossResourceReference;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
@@ -20,7 +21,11 @@ public class KubernetesResourceTest {
     @Test
     void testAwxProjectResource() {
         // Given
-        Project spec = new Project();
+        CrossResourceReference connectionRef = new CrossResourceReference();
+        connectionRef.setName("my-awx");
+        
+        ProjectSpec spec = new ProjectSpec();
+        spec.setAwxConnectionRef(connectionRef);
         spec.setName("Test Project");
         spec.setDescription("A test project");
         spec.setScmType("git");
@@ -36,7 +41,7 @@ public class KubernetesResourceTest {
         metadata.setNamespace("default");
         
         // When
-        KubernetesResource<Project, AwxProjectStatus> project = 
+        KubernetesResource<ProjectSpec, AwxProjectStatus> project = 
             new KubernetesResource<>();
         project.setApiVersion("wolkenzentrale.de/v1alpha1");
         project.setKind("AwxProject");
@@ -52,11 +57,21 @@ public class KubernetesResourceTest {
         assertEquals("default", project.getMetadata().getNamespace());
         
         assertNotNull(project.getSpec());
+        assertNotNull(project.getSpec().getAwxConnectionRef());
+        assertEquals("my-awx", project.getSpec().getAwxConnectionRef().getName());
         assertEquals("Test Project", project.getSpec().getName());
         assertEquals("A test project", project.getSpec().getDescription());
         assertEquals("git", project.getSpec().getScmType());
         assertEquals("https://github.com/test/repo.git", project.getSpec().getScmUrl());
         assertEquals("main", project.getSpec().getScmBranch());
+        
+        // Test conversion to Project
+        Project awxProject = project.getSpec().toProject();
+        assertEquals("Test Project", awxProject.getName());
+        assertEquals("A test project", awxProject.getDescription());
+        assertEquals("git", awxProject.getScmType());
+        assertEquals("https://github.com/test/repo.git", awxProject.getScmUrl());
+        assertEquals("main", awxProject.getScmBranch());
         
         assertNotNull(project.getStatus());
         assertEquals(123, project.getStatus().getAwxId());

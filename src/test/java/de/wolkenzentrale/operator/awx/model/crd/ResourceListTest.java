@@ -5,7 +5,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
 
 import de.wolkenzentrale.operator.awx.model.common.Connection;
-import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.ResourceList;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
@@ -22,20 +21,20 @@ public class ResourceListTest {
     @Test
     void testResourceListWithProjects() {
         // Given
-        KubernetesResource<Project, AwxProjectStatus> project1 = new KubernetesResource<>();
+        KubernetesResource<ProjectSpec, AwxProjectStatus> project1 = new KubernetesResource<>();
         project1.setApiVersion("wolkenzentrale.de/v1alpha1");
         project1.setKind("AwxProject");
         project1.setMetadata(new V1ObjectMeta().name("project1"));
         
-        KubernetesResource<Project, AwxProjectStatus> project2 = new KubernetesResource<>();
+        KubernetesResource<ProjectSpec, AwxProjectStatus> project2 = new KubernetesResource<>();
         project2.setApiVersion("wolkenzentrale.de/v1alpha1");
         project2.setKind("AwxProject");
         project2.setMetadata(new V1ObjectMeta().name("project2"));
         
-        List<KubernetesResource<Project, AwxProjectStatus>> projectList = Arrays.asList(project1, project2);
+        List<KubernetesResource<ProjectSpec, AwxProjectStatus>> projectList = Arrays.asList(project1, project2);
         
         // When
-        ResourceList<KubernetesResource<Project, AwxProjectStatus>> resourceList = new ResourceList<>();
+        ResourceList<KubernetesResource<ProjectSpec, AwxProjectStatus>> resourceList = new ResourceList<>();
         resourceList.setApiVersion("wolkenzentrale.de/v1alpha1");
         resourceList.setKind("AwxProjectList");
         resourceList.setMetadata(new V1ListMeta().resourceVersion("1"));
