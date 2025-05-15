@@ -8,15 +8,15 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Status information for an AWX Instance resource.
- * Extends the base ResourceStatus with instance-specific fields.
+ * Status information for an AWX Connection resource.
+ * Extends the base ResourceStatus with connection-specific fields.
  */
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class AwxInstanceStatus extends ResourceStatus {
+public class AwxConnectionStatus extends ResourceStatus {
     
     /**
      * The current connection status to the AWX instance
@@ -40,10 +40,10 @@ public class AwxInstanceStatus extends ResourceStatus {
     private Integer failedConnectionAttempts;
     
     /**
-     * Create an instance status with a disconnected state
+     * Create a connection status with a disconnected state
      */
-    public static AwxInstanceStatus disconnected(String message) {
-        return AwxInstanceStatus.builder()
+    public static AwxConnectionStatus disconnected(String message) {
+        return AwxConnectionStatus.builder()
                 .message(message)
                 .phase("Pending")
                 .connectionStatus("Disconnected")
@@ -53,7 +53,7 @@ public class AwxInstanceStatus extends ResourceStatus {
     /**
      * Update the status to indicate successful connection
      */
-    public AwxInstanceStatus withConnected(String version) {
+    public AwxConnectionStatus withConnected(String version) {
         super.withSuccess("Successfully connected to AWX instance");
         setConnectionStatus("Connected");
         setAwxVersion(version);

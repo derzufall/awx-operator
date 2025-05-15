@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Instance {
+public class Connection {
     private String url;
     private String username;
     private String passwordSecretName;

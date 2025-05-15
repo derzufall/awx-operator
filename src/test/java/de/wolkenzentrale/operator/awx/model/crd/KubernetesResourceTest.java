@@ -3,10 +3,10 @@ package de.wolkenzentrale.operator.awx.model.crd;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
 
-import de.wolkenzentrale.operator.awx.model.common.Instance;
+import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
-import de.wolkenzentrale.operator.awx.model.crd.status.AwxInstanceStatus;
+import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxProjectStatus;
 
 import java.time.OffsetDateTime;
@@ -64,16 +64,16 @@ public class KubernetesResourceTest {
     }
     
     @Test
-    void testAwxInstanceResource() {
+    void testAwxConnectionResource() {
         // Given
-        Instance spec = new Instance();
+        Connection spec = new Connection();
         spec.setUrl("https://awx.example.com");
         spec.setUsername("admin");
         spec.setPasswordSecretName("awx-creds");
         spec.setPasswordSecretKey("password");
         spec.setInsecureSkipTlsVerify(false);
         
-        AwxInstanceStatus status = new AwxInstanceStatus();
+        AwxConnectionStatus status = new AwxConnectionStatus();
         status.setConnectionStatus("Connected");
         status.setMessage("Successfully connected to AWX instance");
         status.setLastConnected("2023-04-20T10:30:00Z");
@@ -83,31 +83,31 @@ public class KubernetesResourceTest {
         metadata.setNamespace("default");
         
         // When
-        KubernetesResource<Instance, AwxInstanceStatus> instance = 
+        KubernetesResource<Connection, AwxConnectionStatus> connection = 
             new KubernetesResource<>();
-        instance.setApiVersion("wolkenzentrale.de/v1alpha1");
-        instance.setKind("AwxInstance");
-        instance.setMetadata(metadata);
-        instance.setSpec(spec);
-        instance.setStatus(status);
+        connection.setApiVersion("wolkenzentrale.de/v1alpha1");
+        connection.setKind("AwxConnection");
+        connection.setMetadata(metadata);
+        connection.setSpec(spec);
+        connection.setStatus(status);
         
         // Then
-        assertEquals("wolkenzentrale.de/v1alpha1", instance.getApiVersion());
-        assertEquals("AwxInstance", instance.getKind());
-        assertNotNull(instance.getMetadata());
-        assertEquals("test-awx", instance.getMetadata().getName());
-        assertEquals("default", instance.getMetadata().getNamespace());
+        assertEquals("wolkenzentrale.de/v1alpha1", connection.getApiVersion());
+        assertEquals("AwxConnection", connection.getKind());
+        assertNotNull(connection.getMetadata());
+        assertEquals("test-awx", connection.getMetadata().getName());
+        assertEquals("default", connection.getMetadata().getNamespace());
         
-        assertNotNull(instance.getSpec());
-        assertEquals("https://awx.example.com", instance.getSpec().getUrl());
-        assertEquals("admin", instance.getSpec().getUsername());
-        assertEquals("awx-creds", instance.getSpec().getPasswordSecretName());
-        assertEquals("password", instance.getSpec().getPasswordSecretKey());
-        assertFalse(instance.getSpec().isInsecureSkipTlsVerify());
+        assertNotNull(connection.getSpec());
+        assertEquals("https://awx.example.com", connection.getSpec().getUrl());
+        assertEquals("admin", connection.getSpec().getUsername());
+        assertEquals("awx-creds", connection.getSpec().getPasswordSecretName());
+        assertEquals("password", connection.getSpec().getPasswordSecretKey());
+        assertFalse(connection.getSpec().isInsecureSkipTlsVerify());
         
-        assertNotNull(instance.getStatus());
-        assertEquals("Connected", instance.getStatus().getConnectionStatus());
-        assertEquals("Successfully connected to AWX instance", instance.getStatus().getMessage());
-        assertEquals("2023-04-20T10:30:00Z", instance.getStatus().getLastConnected());
+        assertNotNull(connection.getStatus());
+        assertEquals("Connected", connection.getStatus().getConnectionStatus());
+        assertEquals("Successfully connected to AWX instance", connection.getStatus().getMessage());
+        assertEquals("2023-04-20T10:30:00Z", connection.getStatus().getLastConnected());
     }
 } 

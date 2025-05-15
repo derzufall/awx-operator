@@ -6,7 +6,7 @@ This document describes the Custom Resource Definitions (CRDs) used by the AWX O
 
 The AWX Operator uses the following Custom Resource Definitions:
 
-1. `AwxInstance` - Defines an AWX instance connection that the operator will manage.
+1. `AwxConnection` - Defines an AWX instance connection that the operator will manage.
 2. `AwxProject` - Defines an AWX project that the operator will create and maintain in an AWX instance.
 
 ## Status Model
@@ -35,16 +35,16 @@ Conditions provide detailed status information for resources. Each condition has
 * `reason` - Machine-readable reason for the condition's status
 * `message` - Human-readable message about the condition
 
-## AwxInstance CRD
+## AwxConnection CRD
 
-The `AwxInstance` CRD represents a connection to an AWX instance that the operator can manage.
+The `AwxConnection` CRD represents a connection to an AWX instance that the operator can manage.
 
 ### Specification
 
 [source,yaml]
 ----
 apiVersion: wolkenzentrale.de/v1alpha1
-kind: AwxInstance
+kind: AwxConnection
 metadata:
   name: awx-example
   namespace: default
@@ -66,7 +66,7 @@ The `spec` field contains the following properties:
 
 ### Status
 
-In addition to the common status fields, the AwxInstance status includes:
+In addition to the common status fields, the AwxConnection status includes:
 
 * `connectionStatus` - The current connection status (Connected, Disconnected, Error)
 * `lastConnected` - Timestamp of last successful connection
@@ -87,7 +87,7 @@ metadata:
   name: example-project
   namespace: default
   labels:
-    awx-instance: my-awx  # Reference to the AwxInstance CR
+    awx-connection: my-awx  # Reference to the AwxConnection CR
 spec:
   name: "Example Project"
   description: "An example project managed by the AWX Operator"

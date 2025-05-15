@@ -52,12 +52,12 @@ class ResourceStatusTest {
     }
     
     @Test
-    void testAwxInstanceStatus() {
+    void testAwxConnectionStatus() {
         // Given
-        AwxInstanceStatus disconnected = AwxInstanceStatus.disconnected("Not connected yet");
+        AwxConnectionStatus disconnected = AwxConnectionStatus.disconnected("Not connected yet");
         
         // When
-        AwxInstanceStatus connected = disconnected.withConnected("2.5.0");
+        AwxConnectionStatus connected = disconnected.withConnected("2.5.0");
         
         // Then
         assertEquals("Disconnected", disconnected.getConnectionStatus());

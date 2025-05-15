@@ -4,7 +4,7 @@ metadata:
   name: example-project
   namespace: default
   labels:
-    awx-instance: my-awx  # Reference to the AwxInstance CR
+    awx-connection: my-awx  # Reference to the AwxConnection CR
 spec:
   name: "Example Project"
   description: "An example Ansible project managed by the AWX Operator"

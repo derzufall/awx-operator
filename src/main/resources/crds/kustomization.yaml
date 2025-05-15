@@ -3,4 +3,4 @@ kind: Kustomization
 
 resources:
   - v1alpha1-awxproject-crd.yaml
-  - v1alpha1-awxinstance-crd.yaml 
+  - v1alpha1-awxconnection-crd.yaml 

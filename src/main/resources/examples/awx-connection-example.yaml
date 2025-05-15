@@ -1,5 +1,5 @@
 apiVersion: wolkenzentrale.de/v1alpha1
-kind: AwxInstance
+kind: AwxConnection
 metadata:
   name: my-awx
   namespace: default

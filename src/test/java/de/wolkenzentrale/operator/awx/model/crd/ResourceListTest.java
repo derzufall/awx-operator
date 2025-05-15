@@ -4,11 +4,11 @@ import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
 
-import de.wolkenzentrale.operator.awx.model.common.Instance;
+import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.ResourceList;
-import de.wolkenzentrale.operator.awx.model.crd.status.AwxInstanceStatus;
+import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxProjectStatus;
 
 import java.util.Arrays;
@@ -52,34 +52,34 @@ public class ResourceListTest {
     }
     
     @Test
-    void testResourceListWithInstances() {
+    void testResourceListWithConnections() {
         // Given
-        KubernetesResource<Instance, AwxInstanceStatus> instance1 = new KubernetesResource<>();
-        instance1.setApiVersion("wolkenzentrale.de/v1alpha1");
-        instance1.setKind("AwxInstance");
-        instance1.setMetadata(new V1ObjectMeta().name("instance1"));
+        KubernetesResource<Connection, AwxConnectionStatus> connection1 = new KubernetesResource<>();
+        connection1.setApiVersion("wolkenzentrale.de/v1alpha1");
+        connection1.setKind("AwxConnection");
+        connection1.setMetadata(new V1ObjectMeta().name("connection1"));
         
-        KubernetesResource<Instance, AwxInstanceStatus> instance2 = new KubernetesResource<>();
-        instance2.setApiVersion("wolkenzentrale.de/v1alpha1");
-        instance2.setKind("AwxInstance");
-        instance2.setMetadata(new V1ObjectMeta().name("instance2"));
+        KubernetesResource<Connection, AwxConnectionStatus> connection2 = new KubernetesResource<>();
+        connection2.setApiVersion("wolkenzentrale.de/v1alpha1");
+        connection2.setKind("AwxConnection");
+        connection2.setMetadata(new V1ObjectMeta().name("connection2"));
         
-        List<KubernetesResource<Instance, AwxInstanceStatus>> instanceList = Arrays.asList(instance1, instance2);
+        List<KubernetesResource<Connection, AwxConnectionStatus>> connectionList = Arrays.asList(connection1, connection2);
         
         // When
-        ResourceList<KubernetesResource<Instance, AwxInstanceStatus>> resourceList = new ResourceList<>();
+        ResourceList<KubernetesResource<Connection, AwxConnectionStatus>> resourceList = new ResourceList<>();
         resourceList.setApiVersion("wolkenzentrale.de/v1alpha1");
-        resourceList.setKind("AwxInstanceList");
+        resourceList.setKind("AwxConnectionList");
         resourceList.setMetadata(new V1ListMeta().resourceVersion("1"));
-        resourceList.setItems(instanceList);
+        resourceList.setItems(connectionList);
         
         // Then
         assertEquals("wolkenzentrale.de/v1alpha1", resourceList.getApiVersion());
-        assertEquals("AwxInstanceList", resourceList.getKind());
+        assertEquals("AwxConnectionList", resourceList.getKind());
         assertNotNull(resourceList.getMetadata());
         assertEquals("1", resourceList.getMetadata().getResourceVersion());
         assertEquals(2, resourceList.getItems().size());
-        assertEquals("instance1", resourceList.getItems().get(0).getMetadata().getName());
-        assertEquals("instance2", resourceList.getItems().get(1).getMetadata().getName());
+        assertEquals("connection1", resourceList.getItems().get(0).getMetadata().getName());
+        assertEquals("connection2", resourceList.getItems().get(1).getMetadata().getName());
     }
 } 

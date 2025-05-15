@@ -1,10 +1,10 @@
 package de.wolkenzentrale.operator.awx.model.crd.awx;
 
-import de.wolkenzentrale.operator.awx.model.common.Instance;
+import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.ResourceList;
-import de.wolkenzentrale.operator.awx.model.crd.status.AwxInstanceStatus;
+import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxProjectStatus;
 
 /**
@@ -23,9 +23,9 @@ public final class AwxTypes {
     }
     
     /**
-     * Type alias for AwxInstance
+     * Type alias for AwxConnection
      */
-    public static class AwxInstance extends KubernetesResource<Instance, AwxInstanceStatus> {
+    public static class AwxConnection extends KubernetesResource<Connection, AwxConnectionStatus> {
     }
     
     /**
@@ -35,8 +35,8 @@ public final class AwxTypes {
     }
     
     /**
-     * Type alias for AwxInstanceList
+     * Type alias for AwxConnectionList
      */
-    public static class AwxInstanceList extends ResourceList<AwxInstance> {
+    public static class AwxConnectionList extends ResourceList<AwxConnection> {
     }
 } 

@@ -17,7 +17,7 @@ import de.wolkenzentrale.operator.awx.model.crd.awx.AwxTypes;
  * 
  * It provides beans for:
  * 1. AwxProject CRD API client - for managing AWX Project custom resources
- * 2. AwxInstance CRD API client - for managing AWX Instance custom resources
+ * 2. AwxConnection CRD API client - for managing AWX Connection custom resources
  * 
  * These clients allow the operator to perform CRUD operations on the custom resources
  * using the Kubernetes API.
@@ -27,7 +27,7 @@ public class CrdConfig {
     private static final String API_GROUP = "wolkenzentrale.de";
     private static final String API_VERSION = "v1alpha1";
     private static final String PLURAL_AWX_PROJECTS = "awxprojects";
-    private static final String PLURAL_AWX_INSTANCES = "awxinstances";
+    private static final String PLURAL_AWX_CONNECTIONS = "awxconnections";
     
     @Bean
     public GenericKubernetesApi<AwxTypes.AwxProject, AwxTypes.AwxProjectList> awxProjectApi(ApiClient apiClient) {
@@ -43,14 +43,14 @@ public class CrdConfig {
     }
     
     @Bean
-    public GenericKubernetesApi<AwxTypes.AwxInstance, AwxTypes.AwxInstanceList> awxInstanceApi(ApiClient apiClient) {
-        log.info("🌟 Registering AwxInstance CRD API client");
+    public GenericKubernetesApi<AwxTypes.AwxConnection, AwxTypes.AwxConnectionList> awxConnectionApi(ApiClient apiClient) {
+        log.info("🌟 Registering AwxConnection CRD API client");
         return new GenericKubernetesApi<>(
-                AwxTypes.AwxInstance.class,
-                AwxTypes.AwxInstanceList.class,
+                AwxTypes.AwxConnection.class,
+                AwxTypes.AwxConnectionList.class,
                 API_GROUP,
                 API_VERSION,
-                PLURAL_AWX_INSTANCES,
+                PLURAL_AWX_CONNECTIONS,
                 apiClient
         );
     }
