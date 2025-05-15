@@ -1,14 +1,15 @@
 package de.wolkenzentrale.operator.awx.interfaces.awx.client;
 
-import de.wolkenzentrale.operator.awx.interfaces.dto.Project;
-import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectInfo;
-import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectListResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.DeleteExchange;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.annotation.PostExchange;
+
+import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
+import de.wolkenzentrale.operator.awx.model.api.ProjectListResponse;
+import de.wolkenzentrale.operator.awx.model.common.Project;
 import reactor.core.publisher.Mono;
 
 @HttpExchange("/api/v2")

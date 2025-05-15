@@ -1,7 +1,8 @@
 package de.wolkenzentrale.operator.awx.interfaces.client;
 
 import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
-import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectListResponse;
+import de.wolkenzentrale.operator.awx.model.api.ProjectListResponse;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;

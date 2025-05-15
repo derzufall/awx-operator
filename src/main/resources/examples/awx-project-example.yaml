@@ -1,0 +1,13 @@
+apiVersion: wolkenzentrale.de/v1alpha1
+kind: AwxProject
+metadata:
+  name: example-project
+  namespace: default
+  labels:
+    awx-instance: my-awx  # Reference to the AwxInstance CR
+spec:
+  name: "Example Project"
+  description: "An example Ansible project managed by the AWX Operator"
+  scmType: "git"
+  scmUrl: "https://github.com/example/ansible-playbooks.git"
+  scmBranch: "main" 

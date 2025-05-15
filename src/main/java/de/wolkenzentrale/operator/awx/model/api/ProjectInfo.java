@@ -1,6 +1,8 @@
-package de.wolkenzentrale.operator.awx.interfaces.dto;
+package de.wolkenzentrale.operator.awx.model.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import de.wolkenzentrale.operator.awx.model.common.Project;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.RequiredArgsConstructor;

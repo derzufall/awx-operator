@@ -1,0 +1,86 @@
+# AWX Operator Custom Resource Definitions
+
+This document describes the Custom Resource Definitions (CRDs) used by the AWX Operator.
+
+## Overview
+
+The AWX Operator uses the following Custom Resource Definitions:
+
+1. `AwxInstance` - Defines an AWX instance connection that the operator will manage.
+2. `AwxProject` - Defines an AWX project that the operator will create and maintain in an AWX instance.
+
+## AwxInstance CRD
+
+The `AwxInstance` CRD represents a connection to an AWX instance that the operator can manage.
+
+### Specification
+
+[source,yaml]
+----
+apiVersion: wolkenzentrale.de/v1alpha1
+kind: AwxInstance
+metadata:
+  name: awx-example
+  namespace: default
+spec:
+  url: "https://awx.example.com"
+  username: "admin"
+  passwordSecretName: "awx-creds"
+  passwordSecretKey: "password"
+  insecureSkipTlsVerify: false
+----
+
+The `spec` field contains the following properties:
+
+* `url` - The URL of the AWX instance
+* `username` - The username for authenticating with the AWX instance
+* `passwordSecretName` - The name of the Kubernetes secret containing the password
+* `passwordSecretKey` - The key in the secret that contains the password
+* `insecureSkipTlsVerify` - Whether to skip TLS verification (default: false)
+
+### Status
+
+The `status` field contains:
+
+* `connectionStatus` - The current connection status (Connected, Failed, Unknown)
+* `message` - An informational message about the connection status
+* `lastConnected` - Timestamp of last successful connection
+
+## AwxProject CRD
+
+The `AwxProject` CRD represents a project in AWX.
+
+### Specification
+
+[source,yaml]
+----
+apiVersion: wolkenzentrale.de/v1alpha1
+kind: AwxProject
+metadata:
+  name: example-project
+  namespace: default
+spec:
+  name: "Example Project"
+  description: "An example project managed by the AWX Operator"
+  scmType: "git"
+  scmUrl: "https://github.com/example/example-project.git"
+  scmBranch: "main"
+----
+
+The `spec` field contains the following properties:
+
+* `name` - The name of the AWX project
+* `description` - Description of the AWX project
+* `scmType` - The SCM type for the project (git, svn, etc.)
+* `scmUrl` - The SCM URL for the project 
+* `scmBranch` - The SCM branch for the project
+
+### Status
+
+The `status` field contains:
+
+* `awxId` - The ID of the project in AWX 
+* `created` - The creation timestamp
+* `modified` - The last modification timestamp
+* `status` - The current status of the project
+* `message` - Informational message about the project status 

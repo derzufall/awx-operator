@@ -1,0 +1,11 @@
+apiVersion: wolkenzentrale.de/v1alpha1
+kind: AwxInstance
+metadata:
+  name: my-awx
+  namespace: default
+spec:
+  url: "https://awx.example.com"
+  username: "admin"
+  passwordSecretName: "awx-credentials"
+  passwordSecretKey: "password"
+  insecureSkipTlsVerify: false 

@@ -1,6 +1,7 @@
-package de.wolkenzentrale.operator.awx.interfaces.dto;
+package de.wolkenzentrale.operator.awx.model.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
 
 import java.util.List;

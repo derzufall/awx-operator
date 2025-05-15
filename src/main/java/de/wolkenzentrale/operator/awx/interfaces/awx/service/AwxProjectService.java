@@ -1,8 +1,8 @@
 package de.wolkenzentrale.operator.awx.interfaces.awx.service;
 
 import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
-import de.wolkenzentrale.operator.awx.interfaces.dto.Project;
-import de.wolkenzentrale.operator.awx.interfaces.dto.ProjectInfo;
+import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
+import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.util.RetryMono;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

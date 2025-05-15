@@ -14,13 +14,10 @@ import java.io.IOException;
 @Profile("!test & !remotetest") // Don't load this config in test profiles
 public class KubernetesConfig {
 
-    /**
-     * Creates and configures the Kubernetes API client
-     * 
-     * @return configured ApiClient for Kubernetes
-     */
     @Bean
-    public ApiClient kubernetesApiClient() {
+    public ApiClient apiClient() throws IOException {
+        log.info("🚀 Setting up Kubernetes API client");
+        
         try {
             log.info("🚀 Initializing connection to Kubernetes...");
             // Attempt to configure from within a pod first
