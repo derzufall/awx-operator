@@ -89,7 +89,7 @@ public class ClientFactory {
                 continue;
             }
             
-            Connection currentConnection = registry.get(key).getConnection();
+            Connection currentConnection = registry.getConnection(key);
             
             // Check if connection details have changed
             if (currentConnection.hasConnectionDetailsChanged(desiredConnection)) {

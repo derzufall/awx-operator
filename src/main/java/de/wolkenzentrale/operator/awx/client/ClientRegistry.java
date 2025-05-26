@@ -1,6 +1,7 @@
 package de.wolkenzentrale.operator.awx.client;
 
 import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
+import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.ConnectionKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,12 +21,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class ClientRegistry {
     private final Map<ConnectionKey, RawClient> clients = new ConcurrentHashMap<>();
+
+       /**
+     * Gets a client by its connection key
+     */
+    public Connection getConnection(ConnectionKey key) {
+        return clients.get(key).getConnection();
+    }
     
     /**
      * Gets a client by its connection key
      */
-    public RawClient get(ConnectionKey key) {
-        return clients.get(key);
+    public AwxClient getClient(ConnectionKey key) {
+        return clients.get(key).getClient();
     }
 
     /**
