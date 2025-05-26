@@ -11,7 +11,7 @@ import java.io.IOException;
 
 @Slf4j
 @Configuration
-@Profile("!test & !remotetest") // Don't load this config in test profiles
+@Profile("!test") // Don't load this config in test profiles to avoid conflicts with test configurations
 public class KubernetesConfig {
 
     @Bean
