@@ -83,4 +83,19 @@ public class Connection {
     public ConnectionKey getKey() {
         return new ConnectionKey(namespace, name);
     }
+
+    /**
+     * Custom toString that excludes the password for security reasons
+     */
+    @Override
+    public String toString() {
+        return "Connection{" +
+               "name='" + name + '\'' +
+               ", namespace='" + namespace + '\'' +
+               ", url='" + url + '\'' +
+               ", username='" + username + '\'' +
+               ", password='[REDACTED]'" +
+               ", insecureSkipTlsVerify=" + insecureSkipTlsVerify +
+               '}';
+    }
 } 
