@@ -20,8 +20,8 @@ commonAnnotations:
 
 # 🖼️ Development image configuration - always use latest for rapid iteration
 images:
-  - name: ghcr.io/wolkenzentrale/awx-operator
-    newTag: "latest"
+  - name: quay.io/wolkenzentrale/awx-operator
+    newTag: "main"
 
 # 📉 Single replica for development
 replicas:

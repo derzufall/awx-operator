@@ -20,8 +20,8 @@ commonAnnotations:
 
 # 🖼️ Production image configuration
 images:
-  - name: ghcr.io/wolkenzentrale/awx-operator
-    newTag: "v0.0.1"  # Use specific version in production
+  - name: quay.io/wolkenzentrale/awx-operator
+    newTag: "main"  # Use specific version in production
 
 # 📈 Production replicas for high availability
 replicas:
