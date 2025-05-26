@@ -8,7 +8,9 @@ import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.StatusCondition;
 import de.wolkenzentrale.operator.awx.model.api.VersionInfo;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
@@ -21,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -112,12 +115,18 @@ public class ConnectionController {
             try {
                 // Convert resource to Connection model
                 Map<String, Object> spec = (Map<String, Object>) resource.get("spec");
+                
+                // Read password from Kubernetes secret
+                String passwordSecretName = (String) spec.get("passwordSecretName");
+                String passwordSecretKey = (String) spec.get("passwordSecretKey");
+                String password = readPasswordFromSecret(namespace, passwordSecretName, passwordSecretKey);
+                
                 Connection connection = Connection.builder()
                     .name(name)
                     .namespace(namespace)
                     .url((String) spec.get("url"))
                     .username((String) spec.get("username"))
-                    .password((String) spec.get("password"))
+                    .password(password)
                     .insecureSkipTlsVerify((Boolean) spec.get("insecureSkipTlsVerify"))
                     .build();
 
@@ -260,5 +269,22 @@ public class ConnectionController {
             return ((Number) generationObj).longValue();
         }
         return null;
+    }
+
+    private String readPasswordFromSecret(String namespace, String secretName, String secretKey) {
+        try {
+            V1Secret secret = new CoreV1Api(apiClient).readNamespacedSecret(secretName, namespace).execute();
+            if (secret.getData() == null || secret.getData().get(secretKey) == null) {
+                log.error("🔐 Secret key '{}' not found in secret '{}/{}'", secretKey, namespace, secretName);
+                return null;
+            }
+            byte[] passwordBytes = secret.getData().get(secretKey);
+            String password = new String(passwordBytes, StandardCharsets.UTF_8);
+            log.info("🔐 Successfully read password from secret '{}/{}'", namespace, secretName);
+            return password;
+        } catch (Exception e) {
+            log.error("❌ Failed to read password from secret: {}/{}", namespace, secretName, e);
+            throw new RuntimeException("Failed to read password from secret: " + namespace + "/" + secretName, e);
+        }
     }
 } 
