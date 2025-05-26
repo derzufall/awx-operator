@@ -161,11 +161,28 @@ public class ConnectionController {
                     throw new IllegalStateException("Failed to get AWX version info after retries");
                 }
 
-                // Update status with success and version info
+                // Update status with success and version info - matching documented format
                 AwxConnectionStatus status = new AwxConnectionStatus();
-                status.withConnected(versionInfo.getVersion());
+                
+                // Set base ResourceStatus fields
+                status.setPhase("Succeeded");
+                status.setMessage("Successfully connected to AWX instance");
+                status.setLastUpdateTime(java.time.OffsetDateTime.now());
                 status.setObservedGeneration(extractGeneration(resource));
-                status.setLastConnected(java.time.Instant.now().toString());
+                
+                // Check if this is the first successful connection
+                int currentFailedAttempts = getFailedAttemptCount(namespace, name);
+                if (currentFailedAttempts > 0 || !hasFirstSuccessfulSync(namespace, name)) {
+                    status.setFirstSuccessfulSync(java.time.OffsetDateTime.now());
+                }
+                
+                // Set AwxConnection-specific fields
+                status.setConnectionStatus("Connected");
+                status.setAwxVersion(versionInfo.getVersion());
+                status.setLastConnected(java.time.OffsetDateTime.now().toString());
+                status.setFailedConnectionAttempts(0);
+                
+                // Set detailed condition
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.TRUE,
@@ -203,18 +220,27 @@ public class ConnectionController {
                     .put("error_type", e.getClass().getSimpleName())
                     .build());
 
-                // Update status with failure
+                // Update status with failure - matching documented format
                 AwxConnectionStatus status = new AwxConnectionStatus();
                 String errorMessage = e.getMessage();
                 if (e.getCause() != null) {
                     errorMessage += " (caused by: " + e.getCause().getMessage() + ")";
                 }
 
-                status.withFailure("Failed to connect to AWX instance: " + errorMessage);
+                // Set base ResourceStatus fields
+                status.setPhase("Failed");
+                status.setMessage("Failed to connect to AWX instance: " + errorMessage);
+                status.setLastUpdateTime(java.time.OffsetDateTime.now());
                 status.setObservedGeneration(extractGeneration(resource));
+                
+                // Preserve existing firstSuccessfulSync and awxVersion if they exist
+                preserveExistingSuccessInfo(namespace, name, status);
+                
+                // Set AwxConnection-specific fields
                 status.setConnectionStatus("Error");
-                status.setFailedConnectionAttempts(
-                    getFailedAttemptCount(namespace, name) + 1);
+                status.setFailedConnectionAttempts(getFailedAttemptCount(namespace, name) + 1);
+                
+                // Set detailed condition
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.FALSE,
@@ -318,6 +344,26 @@ public class ConnectionController {
         return 0;
     }
 
+    /**
+     * Check if the resource already has a firstSuccessfulSync timestamp.
+     */
+    private boolean hasFirstSuccessfulSync(String namespace, String name) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> resource = (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
+                GROUP, VERSION, namespace, PLURAL, name).execute();
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) resource.get("status");
+            if (status != null && status.get("firstSuccessfulSync") != null) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.debug("Could not retrieve firstSuccessfulSync for {}/{}, assuming false", namespace, name);
+        }
+        return false;
+    }
+
     private String readPasswordFromSecret(String namespace, String secretName, String secretKey) {
         try {
             V1Secret secret = new CoreV1Api(apiClient).readNamespacedSecret(secretName, namespace).execute();
@@ -332,6 +378,27 @@ public class ConnectionController {
         } catch (Exception e) {
             log.error("❌ Failed to read password from secret: {}/{}", namespace, secretName, e);
             throw new RuntimeException("Failed to read password from secret: " + namespace + "/" + secretName, e);
+        }
+    }
+
+    private void preserveExistingSuccessInfo(String namespace, String name, AwxConnectionStatus status) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> resource = (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
+                GROUP, VERSION, namespace, PLURAL, name).execute();
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> existingStatus = (Map<String, Object>) resource.get("status");
+            if (existingStatus != null) {
+                if (existingStatus.get("firstSuccessfulSync") != null) {
+                    status.setFirstSuccessfulSync(java.time.OffsetDateTime.parse(existingStatus.get("firstSuccessfulSync").toString()));
+                }
+                if (existingStatus.get("awxVersion") != null) {
+                    status.setAwxVersion(existingStatus.get("awxVersion").toString());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not preserve existing success info for {}/{}, assuming no change", namespace, name);
         }
     }
 } 

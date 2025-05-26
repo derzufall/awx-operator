@@ -70,16 +70,15 @@ status:
   # Common ResourceStatus fields
   phase: "Failed"
   message: "Failed to connect to AWX instance: Connection timeout"
+  firstSuccessfulSync: "2025-01-26T21:00:00.000Z"  # Preserved from previous success
   lastUpdateTime: "2025-01-26T21:05:30.123Z"
   observedGeneration: 1
   
   # AwxConnection-specific fields
   connectionStatus: "Error"
+  awxVersion: "24.6.1"  # Preserved from previous successful connection
+  lastConnected: "2025-01-26T21:02:16.947Z"  # Last successful connection time
   failedConnectionAttempts: 3
-  
-  # Previous successful connection info preserved
-  awxVersion: "24.6.1"
-  lastConnected: "2025-01-26T21:02:16.947Z"
   
   # Detailed conditions
   conditions:
@@ -88,6 +87,7 @@ status:
       reason: "ConnectionFailed"
       message: "Failed to connect to AWX instance: Connection timeout"
       lastTransitionTime: "2025-01-26T21:05:30.123Z"
+      lastUpdateTime: "2025-01-26T21:05:30.123Z"
 ----
 
 == Status Update Implementation
@@ -183,8 +183,6 @@ private void updateStatus(String namespace, String name, AwxConnectionStatus sta
 - ✅ No additional dependencies required
 
 === Status Update Flow
-
-[source,java]
 
 == Monitoring and Observability
 
