@@ -11,6 +11,9 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.util.PatchUtils;
+import io.kubernetes.client.custom.V1Patch;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
@@ -233,21 +236,19 @@ public class ConnectionController {
         try {
             log.debug("🔄 Updating status for AWX Connection: {}/{}", namespace, name);
             
-            // Get the current resource to preserve other fields
-            @SuppressWarnings("unchecked")
-            Map<String, Object> resource = (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
-                GROUP, VERSION, namespace, PLURAL, name).execute();
+            // Create a merge patch with only the status field
+            Map<String, Object> patchBody = new HashMap<>();
+            patchBody.put("status", status);
             
-            // Create a status-only resource for the status subresource update
-            Map<String, Object> statusResource = new HashMap<>();
-            statusResource.put("apiVersion", resource.get("apiVersion"));
-            statusResource.put("kind", resource.get("kind"));
-            statusResource.put("metadata", resource.get("metadata"));
-            statusResource.put("status", status);
+            // Convert to JSON string for the patch
+            ObjectMapper objectMapper = new ObjectMapper();
+            String patchJson = objectMapper.writeValueAsString(patchBody);
             
-            // Update using the status subresource - this is the key fix!
+            // Update using the status subresource with proper merge patch content type
             customObjectsApi.patchNamespacedCustomObjectStatus(
-                GROUP, VERSION, namespace, PLURAL, name, statusResource).execute();
+                GROUP, VERSION, namespace, PLURAL, name, 
+                new V1Patch(patchJson)
+            ).execute();
                 
             log.debug("✅ Status update completed for AWX Connection: {}/{}", namespace, name);
         } catch (Exception e) {

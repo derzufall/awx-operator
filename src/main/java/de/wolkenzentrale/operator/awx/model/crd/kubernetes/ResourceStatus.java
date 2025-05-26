@@ -1,6 +1,7 @@
 package de.wolkenzentrale.operator.awx.model.crd.kubernetes;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -50,6 +51,7 @@ public class ResourceStatus {
      * List of conditions representing the resource's state
      * Standard Kubernetes pattern for reporting detailed status
      */
+    @Builder.Default
     private List<StatusCondition> conditions = new ArrayList<>();
     
     /**

@@ -54,19 +54,22 @@ class ResourceStatusTest {
     @Test
     void testAwxConnectionStatus() {
         // Given
-        AwxConnectionStatus disconnected = AwxConnectionStatus.disconnected("Not connected yet");
+        AwxConnectionStatus status = AwxConnectionStatus.disconnected("Not connected yet");
         
-        // When
-        AwxConnectionStatus connected = disconnected.withConnected("2.5.0");
+        // Then - check initial disconnected state
+        assertEquals("Disconnected", status.getConnectionStatus());
+        assertEquals("Pending", status.getPhase());
+        assertEquals("Not connected yet", status.getMessage());
         
-        // Then
-        assertEquals("Disconnected", disconnected.getConnectionStatus());
-        assertEquals("Pending", disconnected.getPhase());
+        // When - connect to AWX
+        AwxConnectionStatus connectedStatus = status.withConnected("2.5.0");
         
-        assertEquals("Connected", connected.getConnectionStatus());
-        assertEquals("Succeeded", connected.getPhase());
-        assertEquals("Successfully connected to AWX instance", connected.getMessage());
-        assertEquals("2.5.0", connected.getAwxVersion());
-        assertEquals(Integer.valueOf(0), connected.getFailedConnectionAttempts());
+        // Then - both variables reference the same object that's now connected
+        assertSame(status, connectedStatus); // Same object reference
+        assertEquals("Connected", status.getConnectionStatus());
+        assertEquals("Succeeded", status.getPhase());
+        assertEquals("Successfully connected to AWX instance", status.getMessage());
+        assertEquals("2.5.0", status.getAwxVersion());
+        assertEquals(Integer.valueOf(0), status.getFailedConnectionAttempts());
     }
 } 
