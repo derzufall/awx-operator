@@ -94,11 +94,11 @@ kubectl get awxprojects --all-namespaces
 ### Health Checks
 ```bash
 # Port-forward to access health endpoints
-kubectl port-forward -n awx-operator-system deployment/awx-operator-controller 8081:8081
+kubectl port-forward -n awx-operator-system deployment/awx-operator-controller 8080:8080
 
 # Check health (in another terminal)
-curl http://localhost:8081/actuator/health/liveness
-curl http://localhost:8081/actuator/health/readiness
+curl http://localhost:8080/actuator/health/liveness
+curl http://localhost:8080/actuator/health/readiness
 ```
 
 ### Metrics

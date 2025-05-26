@@ -45,14 +45,14 @@ RUN apk add --no-cache curl
 USER 1001
 
 # 🌐 Expose ports
-EXPOSE 8080 8081
+EXPOSE 8080
 
 # ⚡ JVM optimization for containers
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:+UseG1GC -XX:+UseStringDeduplication"
 
 # 🔍 Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8081/actuator/health/readiness || exit 1
+    CMD curl -f http://localhost:8080/actuator/health/readiness || exit 1
 
 # 🚀 Entry point
 ENTRYPOINT ["java", "-jar", "app.jar"] 
