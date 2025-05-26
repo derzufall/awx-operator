@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: awx-operator-production
+
+# 🏗️ Reference to base configuration
+bases:
+  - ../../base
+
+# 🏷️ Production-specific labels
+commonLabels:
+  environment: production
+  tier: operator
+
+# 🏷️ Production annotations
+commonAnnotations:
+  operator.wolkenzentrale.de/environment: "production"
+  operator.wolkenzentrale.de/managed-by: "argocd"
+
+# 🖼️ Production image configuration
+images:
+  - name: ghcr.io/wolkenzentrale/awx-operator
+    newTag: "v0.0.1"  # Use specific version in production
+
+# 📈 Production replicas for high availability
+replicas:
+  - name: awx-operator-controller
+    count: 2
+
+# ⚙️ Production-specific patches
+patchesStrategicMerge:
+  - deployment-production-patch.yaml
+
+# 🏛️ Production namespace
+namespace: awx-operator-system 

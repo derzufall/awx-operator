@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: awx-operator-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/part-of: awx-operator
+    app.kubernetes.io/managed-by: argocd
+    environment: development
+  annotations:
+    # 🔄 Development notification settings (less critical)
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: awx-operator-dev-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # 🎯 Project reference
+  project: default
+
+  # 📦 Source configuration for development
+  source:
+    repoURL: https://github.com/wolkenzentrale/awx-operator.git
+    targetRevision: HEAD  # Use latest commit for development
+    path: manifests/overlays/development
+    
+    # 🔨 Kustomize configuration
+    kustomize:
+      # 🖼️ Always use latest image for development
+      images:
+        - ghcr.io/wolkenzentrale/awx-operator:latest
+      
+      # 🏷️ Development labels
+      commonLabels:
+        argocd.argoproj.io/instance: awx-operator-dev
+        app.kubernetes.io/managed-by: argocd
+        environment: development
+      
+      # 🏷️ Development annotations
+      commonAnnotations:
+        argocd.argoproj.io/sync-wave: "1"
+        operator.wolkenzentrale.de/deployed-by: argocd-dev
+
+  # 🎯 Destination configuration
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: awx-operator-dev
+
+  # 🔄 Development sync policy (more lenient)
+  syncPolicy:
+    # ⚡ Manual sync for development to have more control
+    automated:
+      prune: false          # Don't auto-prune in development
+      selfHeal: false       # Allow manual changes for testing
+      allowEmpty: true      # Allow empty for testing
+    
+    # 🔧 Sync options
+    syncOptions:
+      - CreateNamespace=true        # Create namespace if it doesn't exist
+      - PrunePropagationPolicy=background  # Faster cleanup for development
+      - ServerSideApply=false      # Use client-side apply for development
+    
+    # 🔄 Faster retry for development
+    retry:
+      limit: 3
+      backoff:
+        duration: 2s
+        factor: 2
+        maxDuration: 1m
+
+  # 📊 Less revision history for development
+  revisionHistoryLimit: 5
+
+  # 🎛️ More lenient ignore differences for development
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+        - /spec/template/spec/containers/0/resources
+        - /spec/template/spec/containers/0/env
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data
+  
+  # 🎯 Development info
+  info:
+    - name: 'Description'
+      value: 'AWX Operator Development Environment'
+    - name: 'Purpose'
+      value: 'For testing and development of the AWX operator'
+    - name: 'Warning'
+      value: 'This is a development environment - expect frequent changes!' 

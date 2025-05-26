@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-operator-controller
+  namespace: awx-operator-system
+spec:
+  template:
+    spec:
+      # 🛡️ Anti-affinity to spread replicas across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - awx-operator
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - controller
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: manager
+        # 🚀 Production resource limits
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        # 🌍 Production environment variables
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: LOGGING_LEVEL_DE_WOLKENZENTRALE
+          value: "INFO"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://opentelemetry-collector.observability:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "awx-operator"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=awx-operator,service.version=v0.0.1,environment=production"
+        - name: JVM_ARGS
+          value: "-Xms128m -Xmx768m -XX:+UseG1GC -XX:+UseContainerSupport"
+        # 🎛️ Enhanced health checks for production
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3 

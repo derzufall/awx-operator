@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: awx-operator-development
+
+# 🏗️ Reference to base configuration
+bases:
+  - ../../base
+
+# 🏷️ Development-specific labels
+commonLabels:
+  environment: development
+  tier: operator
+
+# 🏷️ Development annotations
+commonAnnotations:
+  operator.wolkenzentrale.de/environment: "development"
+  operator.wolkenzentrale.de/managed-by: "kubectl"
+
+# 🖼️ Development image configuration - always use latest for rapid iteration
+images:
+  - name: ghcr.io/wolkenzentrale/awx-operator
+    newTag: "latest"
+
+# 📉 Single replica for development
+replicas:
+  - name: awx-operator-controller
+    count: 1
+
+# ⚙️ Development-specific patches
+patchesStrategicMerge:
+  - deployment-development-patch.yaml
+
+# 🏛️ Development namespace
+namespace: awx-operator-dev 

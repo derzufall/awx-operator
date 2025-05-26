@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-operator-controller
+  namespace: awx-operator-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        # 🧪 Minimal resources for development
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        # 🐛 Development environment variables with debug logging
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "development"
+        - name: LOGGING_LEVEL_DE_WOLKENZENTRALE
+          value: "DEBUG"
+        - name: LOGGING_LEVEL_IO_KUBERNETES
+          value: "DEBUG"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: ""  # Disable telemetry in development
+        - name: OTEL_TRACES_EXPORTER
+          value: "none"
+        - name: OTEL_METRICS_EXPORTER
+          value: "none"
+        - name: JVM_ARGS
+          value: "-Xms32m -Xmx192m -XX:+UseG1GC"
+        # 🚀 Faster health checks for development
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2 

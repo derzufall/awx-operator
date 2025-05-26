@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: awx-operator
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/part-of: awx-operator
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    # 🔄 Notification settings
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: awx-operator-notifications
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: awx-operator-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: awx-operator-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # 🎯 Project reference
+  project: default
+
+  # 📦 Source configuration
+  source:
+    repoURL: https://github.com/wolkenzentrale/awx-operator.git
+    targetRevision: main
+    path: manifests/overlays/production
+    
+    # 🔨 Kustomize configuration
+    kustomize:
+      # 🖼️ Image overrides (can be updated for different versions)
+      images:
+        - ghcr.io/wolkenzentrale/awx-operator:v0.0.1
+      
+      # 🏷️ Common labels for all resources
+      commonLabels:
+        argocd.argoproj.io/instance: awx-operator
+        app.kubernetes.io/managed-by: argocd
+      
+      # 🏷️ Common annotations
+      commonAnnotations:
+        argocd.argoproj.io/sync-wave: "1"
+        operator.wolkenzentrale.de/deployed-by: argocd
+
+  # 🎯 Destination configuration
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: awx-operator-system
+
+  # 🔄 Sync policy
+  syncPolicy:
+    # ⚡ Automated sync
+    automated:
+      prune: true           # Remove resources not in Git
+      selfHeal: true        # Auto-correct manual changes
+      allowEmpty: false     # Don't sync empty applications
+    
+    # 🔧 Sync options
+    syncOptions:
+      - CreateNamespace=true        # Create namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground  # Ensure proper cleanup order
+      - PruneLast=true             # Prune resources after successful sync
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true       # Use server-side apply for better conflict resolution
+      - ApplyOutOfSyncOnly=true    # Only apply resources that are out of sync
+    
+    # 🔄 Retry configuration
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # 📊 Revision history
+  revisionHistoryLimit: 10
+
+  # 🎛️ Ignore differences for certain fields
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Allow HPA to manage replicas
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data  # Allow runtime config changes
+  
+  # 🎯 Info section for additional metadata
+  info:
+    - name: 'Description'
+      value: 'AWX Kubernetes Operator - Manages AWX connections and projects'
+    - name: 'Documentation'
+      value: 'https://github.com/wolkenzentrale/awx-operator/wiki'
+    - name: 'Contact'
+      value: 'platform-team@wolkenzentrale.de' 

@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: awx-operator-system
+  labels:
+    name: awx-operator-system
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: awx-operator-controller
+  namespace: awx-operator-system
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: awx-operator-controller
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: controller
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  - secrets
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - wolkenzentrale.de
+  resources:
+  - awxconnections
+  - awxprojects
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - wolkenzentrale.de
+  resources:
+  - awxconnections/status
+  - awxprojects/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - wolkenzentrale.de
+  resources:
+  - awxconnections/finalizers
+  - awxprojects/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: awx-operator-controller
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: awx-operator-controller
+subjects:
+- kind: ServiceAccount
+  name: awx-operator-controller
+  namespace: awx-operator-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: awx-operator-metrics
+  namespace: awx-operator-system
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: metrics
+spec:
+  selector:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: controller
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-operator-controller
+  namespace: awx-operator-system
+  labels:
+    app.kubernetes.io/name: awx-operator
+    app.kubernetes.io/component: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: awx-operator
+      app.kubernetes.io/component: controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: awx-operator
+        app.kubernetes.io/component: controller
+    spec:
+      serviceAccountName: awx-operator-controller
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: manager
+        image: ghcr.io/wolkenzentrale/awx-operator:latest
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        ports:
+        - name: http-metrics
+          containerPort: 8080
+          protocol: TCP
+        - name: health
+          containerPort: 8081
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://opentelemetry-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "awx-operator"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=awx-operator,service.version=0.0.1"
+      terminationGracePeriodSeconds: 10 
