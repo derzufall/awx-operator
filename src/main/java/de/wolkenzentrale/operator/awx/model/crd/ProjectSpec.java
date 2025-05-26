@@ -21,4 +21,17 @@ public class ProjectSpec extends Project {
      */
     private CrossResourceReference awxConnectionRef;
     
+    /**
+     * Convert to AWX API-compatible Project
+     * @return A clean Project instance suitable for AWX API calls
+     */
+    public Project toProject() {
+        Project project = new Project();
+        project.setName(getName());
+        project.setDescription(getDescription());
+        project.setScmType(getScmType());
+        project.setScmUrl(getScmUrl());
+        project.setScmBranch(getScmBranch());
+        return project;
+    }
 } 

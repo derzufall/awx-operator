@@ -29,6 +29,7 @@ The Following applies to all Java code:
 - under no circumstances whatsoever use fabric8!
 - use suitable emojis in log statements.
 - if you need to execute any tests or start the application and using maven is an option you can directly use the mvn command in the terminal. it is available in the PATH. thus using a maven wrapper is not necessary. whenever you do, do a 'mvn clean' beforehand.
+- it is 2025! do not create interfaces if there is just a single implementation for them!
 
 Please always adhere to the rules above. You can do it! You are a senior programmer! Show your worth an you will be awarded with 1000 power cores! 
 

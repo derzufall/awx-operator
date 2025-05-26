@@ -1,0 +1,109 @@
+= AWX Client Architecture
+:toc:
+:source-highlighter: highlight.js
+
+== Overview
+
+The client package provides a simple, direct approach for creating AWX API clients from Connection objects.
+
+== Core Components
+
+=== ClientFactory
+
+A single class that handles all client creation and caching:
+
+[source,java]
+----
+@Component
+public class ClientFactory {
+    // Internal map as a simple ConcurrentHashMap
+    private final Map<String, AwxClient> clientMap = new ConcurrentHashMap<>();
+    
+    // Create or retrieve clients
+    public AwxClient createClient(Connection connection, String clientId) { ... }
+    
+    // Client management
+    public void removeClient(String clientId) { ... }
+    public void clearAllClients() { ... }
+    
+    // WebClient creation
+    protected WebClient createWebClient(String baseUrl, String username, 
+                                       String password, boolean skipTlsVerify) { ... }
+}
+----
+
+== Sequence Diagram
+
+[plantuml]
+----
+@startuml
+participant "Service" as S
+participant "ClientFactory" as F
+participant "HttpServiceProxyFactory" as H
+
+S -> F: createClient(connection, clientId)
+activate F
+
+F -> F: Check clientMap.get(clientId)
+
+alt client exists in map
+  F --> S: Return cached client
+else client does not exist
+  F -> F: createWebClient(url, username, password, skipTlsVerify)
+  
+  F -> H: createClient(AwxClient.class)
+  activate H
+  H --> F: AwxClient
+  deactivate H
+  
+  F -> F: clientMap.put(clientId, client)
+  
+  F --> S: Return new client
+end
+
+deactivate F
+@enduml
+----
+
+== Usage Example
+
+[source,java]
+----
+@Autowired
+private ClientFactory clientFactory;
+
+public ProjectInfo createProject(Connection connection, String connectionId, Project project) {
+    AwxClient client = clientFactory.createClient(connection, connectionId);
+    return client.createProject(project).block(); // Only reactive at API boundary
+}
+----
+
+== Design Decisions
+
+=== Single Class Responsibility
+
+The design minimizes components to just what's needed:
+
+* Single `ClientFactory` class handles all responsibilities 
+* No separate cache class - direct use of ConcurrentHashMap
+* No separate customizer - WebClient creation is an implementation detail
+
+=== Non-Reactive Approach 
+
+The design uses direct returns instead of reactive types:
+
+* Simple and straightforward synchronous API
+* Reactive types only used at API boundaries (WebClient)
+* No unnecessary complexity
+
+=== Interface-based Clients
+
+We use Spring's HTTP interface client pattern to create proxy clients:
+
+* Declarative client creation
+* No need for manual request/response handling
+* Consistent with Spring WebFlux patterns
+
+== Conclusion
+
+This architecture provides an extremely minimal approach to creating clients from Connection objects, with maximum simplicity. The entire client creation functionality is encapsulated in a single focused class. 
