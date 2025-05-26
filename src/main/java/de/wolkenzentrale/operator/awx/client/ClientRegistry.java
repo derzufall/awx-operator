@@ -12,12 +12,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Thread-safe cache for AWX clients.
- * Manages a map of connection keys to raw clients.
+ * Thread-safe registry for AWX clients.
+ * Manages a map of connection keys to raw clients, providing a central registry
+ * for all active AWX client connections.
  */
 @Slf4j
 @Component
-public class ClientCache {
+public class ClientRegistry {
     private final Map<ConnectionKey, RawClient> clients = new ConcurrentHashMap<>();
     
     /**
@@ -47,15 +48,15 @@ public class ClientCache {
     }
     
     /**
-     * Adds a client to the cache
+     * Registers a client in the registry
      */
     public void put(RawClient client) {
         clients.put(client.getConnection().getKey(), client);
-        log.debug("💾 Cached client: {}", client.getConnection().getKey());
+        log.debug("💾 Registered client: {}", client.getConnection().getKey());
     }
     
     /**
-     * Removes a client from the cache
+     * Removes a client from the registry
      */
     public void remove(ConnectionKey key) {
         clients.remove(key);
@@ -76,29 +77,29 @@ public class ClientCache {
     }
     
     /**
-     * Gets all connection keys in the cache
+     * Gets all connection keys in the registry
      */
     public Set<ConnectionKey> getKeys() {
         return new HashSet<>(clients.keySet());
     }
     
     /**
-     * Checks if a key exists in the cache
+     * Checks if a key exists in the registry
      */
     public boolean containsKey(ConnectionKey key) {
         return clients.containsKey(key);
     }
     
     /**
-     * Clears all clients from the cache
+     * Clears all clients from the registry
      */
     public void clear() {
         clients.clear();
-        log.debug("🧹 Cleared all clients from cache");
+        log.debug("🧹 Cleared all clients from registry");
     }
     
     /**
-     * Gets the current size of the cache
+     * Gets the current size of the registry
      */
     public int size() {
         return clients.size();

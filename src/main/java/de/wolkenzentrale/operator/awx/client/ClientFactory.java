@@ -19,17 +19,18 @@ import java.util.stream.Collectors;
 
 /**
  * Factory for creating and managing AWX clients based on Connection objects.
- * Maintains a cache of clients that matches the desired state from provided connections.
+ * Maintains a registry of clients that matches the desired state from provided connections.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ClientFactory {
-    private final ClientCache cache;
+    private final ClientRegistry registry;
     private final ExchangeStrategies exchangeStrategies;
     private final ObjectMapper objectMapper;
+    
     /**
-     * Updates the client cache to match the provided list of connections.
+     * Updates the client registry to match the provided list of connections.
      * Creates new clients when needed and removes obsolete ones.
      *
      * @param desiredConnections Collection of connections representing the desired state
@@ -51,7 +52,7 @@ public class ClientFactory {
         int created = addNewClients(desiredConnectionMap);
         
         log.info("✅ Client update complete. Created: {}, Updated: {}, Removed: {}, Total: {}", 
-                created, updated, removed, cache.size());
+                created, updated, removed, registry.size());
     }
 
     /**
@@ -63,11 +64,11 @@ public class ClientFactory {
      */
     private int removeObsoleteClients(Map<ConnectionKey, Connection> desiredConnectionMap) {
         // First find which clients need to be removed
-        Set<ConnectionKey> connectionsToRemove = new HashSet<>(cache.getKeys());
+        Set<ConnectionKey> connectionsToRemove = new HashSet<>(registry.getKeys());
         connectionsToRemove.removeAll(desiredConnectionMap.keySet());
         
         // Then remove them
-        connectionsToRemove.forEach(cache::remove);
+        connectionsToRemove.forEach(registry::remove);
         return connectionsToRemove.size();
     }
 
@@ -80,7 +81,7 @@ public class ClientFactory {
      */
     private int recreateUpdatedClients(Map<ConnectionKey, Connection> desiredConnectionMap) {
         int updated = 0;
-        for (ConnectionKey key : cache.getKeys()) {
+        for (ConnectionKey key : registry.getKeys()) {
             Connection desiredConnection = desiredConnectionMap.get(key);
             
             // Skip if not in desired map (handled by removeObsoleteClients)
@@ -88,12 +89,12 @@ public class ClientFactory {
                 continue;
             }
             
-            Connection currentConnection = cache.get(key).getConnection();
+            Connection currentConnection = registry.get(key).getConnection();
             
             // Check if connection details have changed
             if (currentConnection.hasConnectionDetailsChanged(desiredConnection)) {
                 // Remove old client and create new one
-                cache.remove(key);
+                registry.remove(key);
                 createClient(desiredConnection);
                 log.debug("🔄 Recreated updated client: {}", key);
                 updated++;
@@ -112,7 +113,7 @@ public class ClientFactory {
     private int addNewClients(Map<ConnectionKey, Connection> desiredConnectionMap) {
         // First find which clients need to be added
         Set<ConnectionKey> connectionsToAdd = new HashSet<>(desiredConnectionMap.keySet());
-        connectionsToAdd.removeAll(cache.getKeys());
+        connectionsToAdd.removeAll(registry.getKeys());
         
         // Then add them
         connectionsToAdd.forEach(key -> createClient(desiredConnectionMap.get(key)));
@@ -128,7 +129,7 @@ public class ClientFactory {
             objectMapper.getPropertyNamingStrategy().getClass().getSimpleName() : "default");
         
         RawClient rawClient = new RawClient(connection, exchangeStrategies);
-        cache.put(rawClient);
+        registry.put(rawClient);
         
         return rawClient.getClient();
     }
