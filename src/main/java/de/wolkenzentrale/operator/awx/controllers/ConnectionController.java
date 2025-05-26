@@ -151,7 +151,7 @@ public class ConnectionController {
                 // Update status with success and version info
                 AwxConnectionStatus status = new AwxConnectionStatus();
                 status.withConnected(versionInfo.getVersion());
-                status.setObservedGeneration((Long) ((Map<String, Object>) resource.get("metadata")).get("generation"));
+                status.setObservedGeneration(extractGeneration(resource));
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.TRUE,
@@ -195,7 +195,7 @@ public class ConnectionController {
                 }
 
                 status.withFailure("Failed to connect to AWX instance: " + errorMessage);
-                status.setObservedGeneration((Long) ((Map<String, Object>) resource.get("metadata")).get("generation"));
+                status.setObservedGeneration(extractGeneration(resource));
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.FALSE,
@@ -248,5 +248,17 @@ public class ConnectionController {
         } finally {
             span.end();
         }
+    }
+
+    /**
+     * Safely extract generation from Kubernetes resource metadata.
+     * Handles both Long and Double types that can come from JSON deserialization.
+     */
+    private Long extractGeneration(Map<String, Object> resource) {
+        Object generationObj = ((Map<String, Object>) resource.get("metadata")).get("generation");
+        if (generationObj instanceof Number) {
+            return ((Number) generationObj).longValue();
+        }
+        return null;
     }
 } 
