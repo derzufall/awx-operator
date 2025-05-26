@@ -51,6 +51,7 @@ public class ConnectionController {
     private final Meter meter;
     private final ApiClient apiClient;
     private final CustomObjectsApi customObjectsApi;
+    private final ObjectMapper objectMapper;
 
     // Metrics
     private final LongCounter reconciliationCounter;
@@ -59,13 +60,14 @@ public class ConnectionController {
     private final LongCounter connectionErrorCounter;
 
     public ConnectionController(ClientFactory clientFactory, ClientRegistry clientRegistry, 
-                              Tracer tracer, Meter meter, ApiClient apiClient) {
+                              Tracer tracer, Meter meter, ApiClient apiClient, ObjectMapper objectMapper) {
         this.clientFactory = clientFactory;
         this.clientRegistry = clientRegistry;
         this.tracer = tracer;
         this.meter = meter;
         this.apiClient = apiClient;
         this.customObjectsApi = new CustomObjectsApi(apiClient);
+        this.objectMapper = objectMapper;
 
         // Initialize metrics
         this.reconciliationCounter = meter.counterBuilder("awx.connection.reconciliations")
@@ -241,7 +243,6 @@ public class ConnectionController {
             patchBody.put("status", status);
             
             // Convert to JSON string for the patch
-            ObjectMapper objectMapper = new ObjectMapper();
             String patchJson = objectMapper.writeValueAsString(patchBody);
             
             // Update using the status subresource with proper merge patch content type

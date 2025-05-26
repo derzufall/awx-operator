@@ -15,7 +15,7 @@ The AWX Operator implements a comprehensive status update system that provides r
 The operator correctly uses Kubernetes status subresources for all status updates:
 
 * **API Endpoint**: Uses `/status` subresource endpoint
-* **Method**: `patchNamespacedCustomObjectStatus()` for atomic updates
+* **Method**: `patchNamespacedCustomObject()` for atomic updates
 * **Separation**: Status updates are separated from spec updates to prevent conflicts
 * **Consistency**: Guarantees consistent status information across the cluster
 
@@ -90,63 +90,101 @@ status:
       lastTransitionTime: "2025-01-26T21:05:30.123Z"
 ----
 
-== Status Update Implementation Details
+== Status Update Implementation
+
+The AWX Operator implements comprehensive status updates for AWX Connection resources, providing real-time feedback about connection states, version information, and failure tracking.
+
+=== Architecture Overview
+
+The status update system consists of three main components:
+
+1. **ConnectionController**: Handles reconciliation and status updates
+2. **AwxConnectionStatus**: Data model for connection status information  
+3. **Kubernetes Status Subresource**: Proper API usage for status updates
 
 === Core Fixes Applied
 
-The following critical issues were identified and resolved:
+==== 1. Proper Status Subresource Usage
 
-==== 1. Incorrect API Usage ❌➡️✅
+**Problem**: Original implementation incorrectly used `replaceNamespacedCustomObject()` instead of the status subresource.
 
-**Problem**: Using `replaceNamespacedCustomObject()` which replaces the entire resource
+**Before**:
 [source,java]
 ----
-// WRONG - replaces entire object, causing conflicts
-customObjectsApi.replaceNamespacedCustomObject(GROUP, VERSION, namespace, PLURAL, name, resource)
+// Incorrect - replaces entire resource
+customObjectsApi.replaceNamespacedCustomObject(
+    GROUP, VERSION, namespace, PLURAL, name, resource)
 ----
 
-**Solution**: Using `patchNamespacedCustomObjectStatus()` for status-only updates
+**After**:
 [source,java]
 ----
-// CORRECT - updates only status subresource
-customObjectsApi.patchNamespacedCustomObjectStatus(GROUP, VERSION, namespace, PLURAL, name, statusResource)
+// Correct - updates only status subresource using merge patch
+Map<String, Object> patchBody = new HashMap<>();
+patchBody.put("status", status);
+String patchJson = objectMapper.writeValueAsString(patchBody);
+
+customObjectsApi.patchNamespacedCustomObjectStatus(
+    GROUP, VERSION, namespace, PLURAL, name, 
+    new V1Patch(patchJson)
+).execute();
 ----
 
-==== 2. Missing Version Information ❌➡️✅
+==== 2. Enhanced Status Information
 
-**Problem**: AWX version information not properly stored in status
+**Problem**: Status lacked detailed information about AWX versions and connection history.
 
-**Solution**: Enhanced status object construction
+**Enhanced Status Fields**:
+- `connectionStatus`: "Connected"/"Error"/"Disconnected"  
+- `awxVersion`: Actual AWX version from instance
+- `lastConnected`: ISO timestamp of last successful connection
+- `failedConnectionAttempts`: Incremented counter for failures
+- `conditions`: Detailed Ready conditions with reasons and messages
+
+==== 3. Jackson Serialization for Java 8 Time Types
+
+**Problem**: Custom ObjectMapper instances don't support Java 8 time types like `OffsetDateTime` by default.
+
+**Error**:
+----
+Java 8 date/time type `java.time.OffsetDateTime` not supported by default: 
+add Module "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" to enable handling
+----
+
+**Before**:
 [source,java]
 ----
-status.withConnected(versionInfo.getVersion());
-status.setLastConnected(java.time.Instant.now().toString());
-status.setAwxVersion(versionInfo.getVersion());
-status.setFailedConnectionAttempts(0);
+// Creates new ObjectMapper without JSR310 support
+ObjectMapper objectMapper = new ObjectMapper();
+String patchJson = objectMapper.writeValueAsString(patchBody);
 ----
 
-==== 3. Improper Error Handling ❌➡️✅
-
-**Problem**: Failed attempts not properly tracked
-
-**Solution**: Intelligent failure counting and status preservation
+**After**:
 [source,java]
 ----
-status.setFailedConnectionAttempts(getFailedAttemptCount(namespace, name) + 1);
-status.setConnectionStatus("Error");
-// Previous successful connection info is preserved
+// Inject Spring's pre-configured ObjectMapper with JSR310 support
+public ConnectionController(ClientFactory clientFactory, ClientRegistry clientRegistry, 
+                          Tracer tracer, Meter meter, ApiClient apiClient, ObjectMapper objectMapper) {
+    // ... other fields
+    this.objectMapper = objectMapper; // Spring Boot auto-configures with JSR310
+}
+
+private void updateStatus(String namespace, String name, AwxConnectionStatus status) {
+    // ... patch creation
+    String patchJson = objectMapper.writeValueAsString(patchBody); // Now supports OffsetDateTime
+    // ... status update
+}
 ----
 
-=== Security Enhancements
+**Benefits**:
+- ✅ Automatic JSR310 module support via Spring Boot configuration
+- ✅ Proper serialization of `OffsetDateTime`, `Instant`, and other Java 8 time types
+- ✅ Consistent Jackson configuration across the application
+- ✅ No additional dependencies required
 
-==== Password Protection
+=== Status Update Flow
 
-All password-related information is properly secured:
-
-* **Secret Reading**: Passwords read from Kubernetes secrets only
-* **No Logging**: Zero password information in logs
-* **Safe toString()**: Custom toString() method redacts passwords
-* **Error Messages**: Generic error messages without sensitive data
+[source,java]
 
 == Monitoring and Observability
 
