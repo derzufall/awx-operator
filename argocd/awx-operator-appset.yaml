@@ -52,7 +52,7 @@ spec:
         kustomize:
           # 🖼️ Dynamic image tagging based on environment
           images:
-            - 'ghcr.io/wolkenzentrale/awx-operator:{{path.basename == "production" && "v0.0.1" || "latest"}}'
+            - 'quay.io/wolkenzentrale/awx-operator:{{path.basename == "production" && "v0.0.1" || "latest"}}'
           
           # 🏷️ Common labels for all resources
           commonLabels:

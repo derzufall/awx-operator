@@ -42,7 +42,7 @@ COPY --from=builder --chown=appuser:appgroup /app/target/*.jar app.jar
 RUN apk add --no-cache curl
 
 # 👤 Switch to non-root user
-USER appuser
+USER 1001
 
 # 🌐 Expose ports
 EXPOSE 8080 8081

@@ -22,7 +22,7 @@ commonAnnotations:
 
 # 🖼️ Images that can be customized
 images:
-  - name: ghcr.io/wolkenzentrale/awx-operator
+  - name: quay.io/wolkenzentrale/awx-operator
     newTag: latest
 
 # 🏛️ Namespace transformation

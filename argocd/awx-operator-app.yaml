@@ -28,7 +28,7 @@ spec:
     kustomize:
       # 🖼️ Image overrides (can be updated for different versions)
       images:
-        - ghcr.io/wolkenzentrale/awx-operator:v0.0.1
+        - quay.io/wolkenzentrale/awx-operator:main
       
       # 🏷️ Common labels for all resources
       commonLabels:
@@ -51,7 +51,7 @@ spec:
     automated:
       prune: true           # Remove resources not in Git
       selfHeal: true        # Auto-correct manual changes
-      allowEmpty: false     # Don't sync empty applications
+      #allowEmpty: false     # Don't sync empty applications
     
     # 🔧 Sync options
     syncOptions:
