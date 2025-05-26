@@ -28,6 +28,6 @@ public interface AwxClient {
     @DeleteExchange("/projects/{id}/")
     Mono<Void> deleteProject(@PathVariable("id") Integer id);
 
-    @GetExchange("/version/")
+    @GetExchange("/ping/")
     Mono<VersionInfo> getVersion();
 } 

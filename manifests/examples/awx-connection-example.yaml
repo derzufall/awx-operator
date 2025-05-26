@@ -4,8 +4,8 @@ metadata:
   name: my-awx
   namespace: default
 spec:
-  url: "https://awx.example.com"
+  url: "http://82.165.203.242:32060"
   username: "admin"
   passwordSecretName: "awx-credentials"
   passwordSecretKey: "password"
-  insecureSkipTlsVerify: false 
+  insecureSkipTlsVerify: true
