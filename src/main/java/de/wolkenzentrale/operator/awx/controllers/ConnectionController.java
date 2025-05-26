@@ -11,9 +11,8 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.custom.V1Patch;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kubernetes.client.util.PatchUtils;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
@@ -25,12 +24,10 @@ import io.opentelemetry.context.Scope;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Controller for reconciling AWX Connection resources.
@@ -242,13 +239,9 @@ public class ConnectionController {
             Map<String, Object> patchBody = new HashMap<>();
             patchBody.put("status", status);
             
-            // Convert to JSON string for the patch
-            String patchJson = objectMapper.writeValueAsString(patchBody);
-            
-            // Update using the status subresource with proper merge patch content type
+            // Update using the status subresource with proper merge patch
             customObjectsApi.patchNamespacedCustomObjectStatus(
-                GROUP, VERSION, namespace, PLURAL, name, 
-                new V1Patch(patchJson)
+                GROUP, VERSION, namespace, PLURAL, name, patchBody
             ).execute();
                 
             log.debug("✅ Status update completed for AWX Connection: {}/{}", namespace, name);
