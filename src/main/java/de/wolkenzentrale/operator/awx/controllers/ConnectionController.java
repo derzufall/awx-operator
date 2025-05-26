@@ -33,7 +33,7 @@ import java.util.Map;
 @Component
 public class ConnectionController {
 
-    private static final String GROUP = "awx.wolkenzentrale.de";
+    private static final String GROUP = "wolkenzentrale.de";
     private static final String VERSION = "v1alpha1";
     private static final String PLURAL = "awxconnections";
     private static final String FINALIZER = "awx-connection.finalizers.wolkenzentrale.de";
