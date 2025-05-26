@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -161,6 +162,7 @@ public class ConnectionController {
                 AwxConnectionStatus status = new AwxConnectionStatus();
                 status.withConnected(versionInfo.getVersion());
                 status.setObservedGeneration(extractGeneration(resource));
+                status.setLastConnected(java.time.Instant.now().toString());
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.TRUE,
@@ -179,6 +181,8 @@ public class ConnectionController {
 
                 // Update the resource with new status
                 updateStatus(namespace, name, status);
+                log.info("✅ Successfully updated status for AWX Connection: {}/{} (version: {})", 
+                    namespace, name, versionInfo.getVersion());
 
             } catch (Exception e) {
                 log.error("❌ Failed to reconcile AWX Connection: {}/{}", namespace, name, e);
@@ -205,6 +209,9 @@ public class ConnectionController {
 
                 status.withFailure("Failed to connect to AWX instance: " + errorMessage);
                 status.setObservedGeneration(extractGeneration(resource));
+                status.setConnectionStatus("Error");
+                status.setFailedConnectionAttempts(
+                    getFailedAttemptCount(namespace, name) + 1);
                 status.setCondition(StatusCondition.create(
                     StatusCondition.Types.READY,
                     StatusCondition.Statuses.FALSE,
@@ -214,6 +221,8 @@ public class ConnectionController {
 
                 // Update the resource with new status
                 updateStatus(namespace, name, status);
+                log.warn("⚠️ Updated failure status for AWX Connection: {}/{} (attempt: {})", 
+                    namespace, name, status.getFailedConnectionAttempts());
             }
         } finally {
             span.end();
@@ -222,16 +231,27 @@ public class ConnectionController {
 
     private void updateStatus(String namespace, String name, AwxConnectionStatus status) {
         try {
+            log.debug("🔄 Updating status for AWX Connection: {}/{}", namespace, name);
+            
+            // Get the current resource to preserve other fields
             @SuppressWarnings("unchecked")
             Map<String, Object> resource = (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
                 GROUP, VERSION, namespace, PLURAL, name).execute();
             
-            resource.put("status", status);
+            // Create a status-only resource for the status subresource update
+            Map<String, Object> statusResource = new HashMap<>();
+            statusResource.put("apiVersion", resource.get("apiVersion"));
+            statusResource.put("kind", resource.get("kind"));
+            statusResource.put("metadata", resource.get("metadata"));
+            statusResource.put("status", status);
             
-            customObjectsApi.replaceNamespacedCustomObject(
-                GROUP, VERSION, namespace, PLURAL, name, resource).execute();
+            // Update using the status subresource - this is the key fix!
+            customObjectsApi.patchNamespacedCustomObjectStatus(
+                GROUP, VERSION, namespace, PLURAL, name, statusResource).execute();
+                
+            log.debug("✅ Status update completed for AWX Connection: {}/{}", namespace, name);
         } catch (Exception e) {
-            log.error("Failed to update status for AWX Connection: {}/{}", namespace, name, e);
+            log.error("❌ Failed to update status for AWX Connection: {}/{} - {}", namespace, name, e.getMessage(), e);
         }
     }
 
@@ -269,6 +289,29 @@ public class ConnectionController {
             return ((Number) generationObj).longValue();
         }
         return null;
+    }
+
+    /**
+     * Get the current failed attempt count from the existing status.
+     */
+    private int getFailedAttemptCount(String namespace, String name) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> resource = (Map<String, Object>) customObjectsApi.getNamespacedCustomObject(
+                GROUP, VERSION, namespace, PLURAL, name).execute();
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) resource.get("status");
+            if (status != null && status.get("failedConnectionAttempts") != null) {
+                Object attempts = status.get("failedConnectionAttempts");
+                if (attempts instanceof Number) {
+                    return ((Number) attempts).intValue();
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not retrieve failed attempt count for {}/{}, defaulting to 0", namespace, name);
+        }
+        return 0;
     }
 
     private String readPasswordFromSecret(String namespace, String secretName, String secretKey) {
