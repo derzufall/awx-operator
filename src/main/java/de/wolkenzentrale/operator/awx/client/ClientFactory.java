@@ -3,8 +3,8 @@ package de.wolkenzentrale.operator.awx.client;
 import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.ConnectionKey;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 
@@ -23,11 +23,18 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ClientFactory {
     private final ClientRegistry registry;
     private final ExchangeStrategies exchangeStrategies;
     private final ObjectMapper objectMapper;
+    
+    public ClientFactory(ClientRegistry registry, 
+                        ExchangeStrategies exchangeStrategies,
+                        @Qualifier("awxObjectMapper") ObjectMapper objectMapper) {
+        this.registry = registry;
+        this.exchangeStrategies = exchangeStrategies;
+        this.objectMapper = objectMapper;
+    }
     
     /**
      * Updates the client registry to match the provided list of connections.

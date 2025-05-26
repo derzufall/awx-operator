@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +51,7 @@ public class ConnectionController {
     private final ApiClient apiClient;
     private final CustomObjectsApi customObjectsApi;
     private final ObjectMapper objectMapper;
+    private final CoreV1Api coreV1Api;
 
     // Metrics
     private final LongCounter reconciliationCounter;
@@ -58,13 +60,15 @@ public class ConnectionController {
     private final LongCounter connectionErrorCounter;
 
     public ConnectionController(ClientFactory clientFactory, ClientRegistry clientRegistry, 
-                              Tracer tracer, Meter meter, ApiClient apiClient, ObjectMapper objectMapper) {
+                              Tracer tracer, Meter meter, ApiClient apiClient, 
+                              @Qualifier("kubernetesObjectMapper") ObjectMapper objectMapper) {
         this.clientFactory = clientFactory;
         this.clientRegistry = clientRegistry;
         this.tracer = tracer;
         this.meter = meter;
         this.apiClient = apiClient;
         this.customObjectsApi = new CustomObjectsApi(apiClient);
+        this.coreV1Api = new CoreV1Api(apiClient);
         this.objectMapper = objectMapper;
 
         // Initialize metrics
@@ -268,6 +272,7 @@ public class ConnectionController {
             
             // Convert to JSON string for the patch
             String patchJson = objectMapper.writeValueAsString(patchBody);
+            log.debug("📤 Sending patch JSON: {}", patchJson);
             
             // Use PatchUtils.patch() with buildCall pattern - working solution from GitHub issue
             PatchUtils.patch(
