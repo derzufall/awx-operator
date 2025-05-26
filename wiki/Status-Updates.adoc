@@ -1,0 +1,273 @@
+= AWX Operator Status Updates
+:toc:
+:toc-placement: preamble
+
+This document provides detailed information about the AWX Operator's status update system and recent improvements.
+
+== Overview
+
+The AWX Operator implements a comprehensive status update system that provides real-time information about the health and state of AWX connections and projects. The status system follows Kubernetes best practices and provides detailed observability for administrators.
+
+== Status Update Architecture
+
+=== Kubernetes Status Subresources
+
+The operator correctly uses Kubernetes status subresources for all status updates:
+
+* **API Endpoint**: Uses `/status` subresource endpoint
+* **Method**: `patchNamespacedCustomObjectStatus()` for atomic updates
+* **Separation**: Status updates are separated from spec updates to prevent conflicts
+* **Consistency**: Guarantees consistent status information across the cluster
+
+=== Status Update Flow
+
+1. **Reconciliation Trigger**: Scheduled reconciliation every 30 seconds (configurable)
+2. **Connection Attempt**: Operator attempts to connect to AWX instance
+3. **Version Retrieval**: Fetches AWX version information and instance details
+4. **Status Construction**: Builds comprehensive status object
+5. **Status Update**: Updates Kubernetes resource status via status subresource
+6. **Logging**: Provides detailed logging for observability
+
+== AwxConnection Status Details
+
+=== Success Status Fields
+
+When an AWX connection is successful, the following fields are populated:
+
+[source,yaml]
+----
+status:
+  # Common ResourceStatus fields
+  phase: "Succeeded"
+  message: "Successfully connected to AWX instance"
+  firstSuccessfulSync: "2025-01-26T21:00:00.000Z"
+  lastUpdateTime: "2025-01-26T21:02:16.947Z"
+  observedGeneration: 1
+  
+  # AwxConnection-specific fields
+  connectionStatus: "Connected"
+  awxVersion: "24.6.1"
+  lastConnected: "2025-01-26T21:02:16.947Z"
+  failedConnectionAttempts: 0
+  
+  # Detailed conditions
+  conditions:
+    - type: "Ready"
+      status: "True"
+      reason: "Connected"
+      message: "Successfully connected to AWX instance MyAWX (version 24.6.1)"
+      lastTransitionTime: "2025-01-26T21:02:16.947Z"
+      lastUpdateTime: "2025-01-26T21:02:16.947Z"
+----
+
+=== Failure Status Fields
+
+When connection attempts fail, the status tracks detailed failure information:
+
+[source,yaml]
+----
+status:
+  # Common ResourceStatus fields
+  phase: "Failed"
+  message: "Failed to connect to AWX instance: Connection timeout"
+  lastUpdateTime: "2025-01-26T21:05:30.123Z"
+  observedGeneration: 1
+  
+  # AwxConnection-specific fields
+  connectionStatus: "Error"
+  failedConnectionAttempts: 3
+  
+  # Previous successful connection info preserved
+  awxVersion: "24.6.1"
+  lastConnected: "2025-01-26T21:02:16.947Z"
+  
+  # Detailed conditions
+  conditions:
+    - type: "Ready"
+      status: "False"
+      reason: "ConnectionFailed"
+      message: "Failed to connect to AWX instance: Connection timeout"
+      lastTransitionTime: "2025-01-26T21:05:30.123Z"
+----
+
+== Status Update Implementation Details
+
+=== Core Fixes Applied
+
+The following critical issues were identified and resolved:
+
+==== 1. Incorrect API Usage ❌➡️✅
+
+**Problem**: Using `replaceNamespacedCustomObject()` which replaces the entire resource
+[source,java]
+----
+// WRONG - replaces entire object, causing conflicts
+customObjectsApi.replaceNamespacedCustomObject(GROUP, VERSION, namespace, PLURAL, name, resource)
+----
+
+**Solution**: Using `patchNamespacedCustomObjectStatus()` for status-only updates
+[source,java]
+----
+// CORRECT - updates only status subresource
+customObjectsApi.patchNamespacedCustomObjectStatus(GROUP, VERSION, namespace, PLURAL, name, statusResource)
+----
+
+==== 2. Missing Version Information ❌➡️✅
+
+**Problem**: AWX version information not properly stored in status
+
+**Solution**: Enhanced status object construction
+[source,java]
+----
+status.withConnected(versionInfo.getVersion());
+status.setLastConnected(java.time.Instant.now().toString());
+status.setAwxVersion(versionInfo.getVersion());
+status.setFailedConnectionAttempts(0);
+----
+
+==== 3. Improper Error Handling ❌➡️✅
+
+**Problem**: Failed attempts not properly tracked
+
+**Solution**: Intelligent failure counting and status preservation
+[source,java]
+----
+status.setFailedConnectionAttempts(getFailedAttemptCount(namespace, name) + 1);
+status.setConnectionStatus("Error");
+// Previous successful connection info is preserved
+----
+
+=== Security Enhancements
+
+==== Password Protection
+
+All password-related information is properly secured:
+
+* **Secret Reading**: Passwords read from Kubernetes secrets only
+* **No Logging**: Zero password information in logs
+* **Safe toString()**: Custom toString() method redacts passwords
+* **Error Messages**: Generic error messages without sensitive data
+
+== Monitoring and Observability
+
+=== Log Messages
+
+The operator provides comprehensive logging for status operations:
+
+==== Success Messages
+```
+✅ Successfully updated status for AWX Connection: default/my-awx (version: 24.6.1)
+📊 AWX version info: 24.6.1
+🔄 Reconciling AWX Connection: default/my-awx
+```
+
+==== Failure Messages
+```
+⚠️ Updated failure status for AWX Connection: default/my-awx (attempt: 3)
+❌ Failed to reconcile AWX Connection: default/my-awx
+```
+
+==== Debug Messages
+```
+🔄 Updating status for AWX Connection: default/my-awx
+✅ Status update completed for AWX Connection: default/my-awx
+```
+
+=== Metrics
+
+The operator exposes the following metrics for monitoring:
+
+* `awx.connection.reconciliations` - Total reconciliation attempts
+* `awx.connection.reconciliation.errors` - Total reconciliation errors
+* `awx.connection.success` - Successful connections
+* `awx.connection.errors` - Connection errors
+
+Each metric includes labels for `namespace`, `name`, and relevant contextual information.
+
+== Troubleshooting Guide
+
+=== Common Issues
+
+==== Status Not Updating
+
+**Check RBAC Permissions**:
+```bash
+kubectl auth can-i patch awxconnections/status --as=system:serviceaccount:awx-operator-system:awx-operator-controller
+```
+
+**Verify CRD Configuration**:
+```bash
+kubectl get crd awxconnections.wolkenzentrale.de -o jsonpath='{.spec.versions[0].subresources}'
+```
+
+**Expected Output**: `{"status":{}}`
+
+==== Connection Failures
+
+**Verify Secret Exists**:
+```bash
+kubectl get secret awx-credentials -n <namespace>
+kubectl get secret awx-credentials -n <namespace> -o jsonpath='{.data.password}' | base64 -d
+```
+
+**Check Network Connectivity**:
+```bash
+# From within the cluster
+kubectl run test-pod --image=curlimages/curl --rm -it -- curl -k https://awx.example.com/api/v2/ping/
+```
+
+**Review Operator Logs**:
+```bash
+kubectl logs -f deployment/awx-operator-controller -n awx-operator-system | grep "my-awx"
+```
+
+=== Diagnostic Commands
+
+==== View Current Status
+```bash
+# List all connections with status
+kubectl get awxconnections -o wide
+
+# Get detailed status information
+kubectl describe awxconnection my-awx
+
+# View status as YAML
+kubectl get awxconnection my-awx -o yaml | grep -A 20 "status:"
+```
+
+==== Monitor Real-time Updates
+```bash
+# Watch status changes
+kubectl get awxconnections -w
+
+# Follow operator logs
+kubectl logs -f deployment/awx-operator-controller -n awx-operator-system
+
+# Monitor events
+kubectl get events --field-selector involvedObject.kind=AwxConnection -w
+```
+
+== Best Practices
+
+=== Resource Management
+
+1. **Use Namespaces**: Organize connections by environment/purpose
+2. **Secret Management**: Use separate secrets per connection
+3. **Resource Limits**: Set appropriate resource limits for the operator
+4. **Monitoring**: Implement monitoring for connection health
+
+=== Security
+
+1. **Secret Rotation**: Regularly rotate AWX credentials
+2. **Network Policies**: Restrict network access to AWX instances
+3. **RBAC**: Use minimal required permissions
+4. **TLS**: Always use TLS for AWX connections in production
+
+=== Operational
+
+1. **Logging**: Monitor operator logs for connection issues
+2. **Metrics**: Set up alerting on connection failures
+3. **Backup**: Backup AWX instance configurations
+4. **Testing**: Test connections in staging before production
+
+This comprehensive status update system ensures reliable, observable, and secure management of AWX connections within Kubernetes environments. 

@@ -124,4 +124,16 @@ The project follows a layered architecture with clear separation of concerns:
   ** `business.service` - Service layer for business operations
 * `application` - Application configuration and bootstrap
 
-More implementation details will be added as the project evolves. 
+More implementation details will be added as the project evolves.
+
+== Documentation
+
+The AWX Operator provides comprehensive documentation for all aspects of the system:
+
+* **link:CRDs.adoc[Custom Resource Definitions]** - Complete CRD specifications and usage examples
+* **link:Status-Updates.adoc[Status Update System]** - Detailed guide to status updates, troubleshooting, and monitoring
+* **link:client/[Client Architecture]** - Technical details of the AWX client implementation
+
+Each document provides detailed technical information, examples, and troubleshooting guidance.
+
+== Project Structure 

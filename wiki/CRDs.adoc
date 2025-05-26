@@ -73,6 +73,122 @@ In addition to the common status fields, the AwxConnection status includes:
 * `awxVersion` - AWX version reported by the instance
 * `failedConnectionAttempts` - Number of failed connection attempts
 
+### Status Update Implementation
+
+The AWX Operator implements robust status updates for AwxConnection resources with the following enhancements:
+
+#### Status Update Mechanism
+
+The operator uses Kubernetes status subresources for proper status updates:
+
+* **Correct API Usage**: Uses `patchNamespacedCustomObjectStatus()` instead of `replaceNamespacedCustomObject()`
+* **Status Subresource**: Leverages the `/status` endpoint for atomic status updates
+* **Conflict Prevention**: Avoids conflicts with spec updates by using dedicated status API
+
+#### Connection Status States
+
+[options="header"]
+|===
+|Status|Description|Fields Updated
+|Connected|Successfully connected to AWX|`connectionStatus="Connected"`, `awxVersion`, `lastConnected`, `failedConnectionAttempts=0`
+|Error|Failed to connect to AWX|`connectionStatus="Error"`, `failedConnectionAttempts` incremented
+|Disconnected|Initial or unknown state|`connectionStatus="Disconnected"`
+|===
+
+#### Enhanced Status Information
+
+When successfully connected, the status provides comprehensive information:
+
+[source,yaml]
+----
+status:
+  connectionStatus: "Connected"
+  awxVersion: "24.6.1"
+  lastConnected: "2025-01-26T21:02:16.947Z"
+  failedConnectionAttempts: 0
+  phase: "Succeeded"
+  message: "Successfully connected to AWX instance"
+  conditions:
+    - type: "Ready"
+      status: "True"
+      reason: "Connected"
+      message: "Successfully connected to AWX instance MyAWX (version 24.6.1)"
+      lastTransitionTime: "2025-01-26T21:02:16.947Z"
+----
+
+#### Failure Tracking
+
+Failed connection attempts are tracked with detailed information:
+
+[source,yaml]
+----
+status:
+  connectionStatus: "Error"
+  failedConnectionAttempts: 3
+  phase: "Failed"
+  message: "Failed to connect to AWX instance: Connection timeout"
+  conditions:
+    - type: "Ready"
+      status: "False"
+      reason: "ConnectionFailed"
+      message: "Failed to connect to AWX instance: Connection timeout"
+----
+
+#### Status Observability
+
+The operator provides extensive logging for status operations:
+
+* **Success**: `✅ Successfully updated status for AWX Connection: namespace/name (version: x.x.x)`
+* **Failure**: `⚠️ Updated failure status for AWX Connection: namespace/name (attempt: N)`
+* **Debug**: `🔄 Updating status for AWX Connection: namespace/name`
+
+This ensures administrators can easily monitor connection health and troubleshoot issues.
+
+#### Troubleshooting Status Updates
+
+If status updates are not appearing in Kubernetes, check the following:
+
+**1. RBAC Permissions**
+Ensure the operator service account has proper permissions:
+[source,yaml]
+----
+rules:
+- apiGroups: ["wolkenzentrale.de"]
+  resources: ["awxconnections", "awxconnections/status"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+----
+
+**2. CRD Subresources**
+Verify the CRD has status subresource enabled:
+[source,yaml]
+----
+subresources:
+  status: {}
+----
+
+**3. Secret Access**
+Check that the referenced secret exists and is accessible:
+[source,bash]
+----
+kubectl get secret awx-credentials -n <namespace>
+kubectl describe secret awx-credentials -n <namespace>
+----
+
+**4. Monitor Operator Logs**
+Watch operator logs for status update messages:
+[source,bash]
+----
+kubectl logs -f deployment/awx-operator-controller -n awx-operator-system
+----
+
+**5. Check Connection Status**
+View detailed status information:
+[source,bash]
+----
+kubectl get awxconnections -o wide
+kubectl describe awxconnection <name> -n <namespace>
+----
+
 ## AwxProject CRD
 
 The `AwxProject` CRD represents a project in AWX.
