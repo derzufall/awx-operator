@@ -48,11 +48,6 @@ public class AwxClientConfig {
         String encodedAuth = Base64.getEncoder().encodeToString(basicAuth.getBytes(StandardCharsets.UTF_8));
         String authHeaderValue = "Basic " + encodedAuth;
         
-        // Log the ObjectMapper configuration
-        log.info("🔧 Using ObjectMapper with property naming strategy: {}", 
-                 objectMapper.getPropertyNamingStrategy() != null ? 
-                 objectMapper.getPropertyNamingStrategy().getClass().getSimpleName() : "default");
-        
         WebClient webClient = WebClient.builder()
                 .baseUrl(awxBaseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, authHeaderValue)

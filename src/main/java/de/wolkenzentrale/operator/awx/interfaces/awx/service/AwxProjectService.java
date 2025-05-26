@@ -4,20 +4,14 @@ import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import de.wolkenzentrale.operator.awx.util.RetryMono;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-@Service
-@RequiredArgsConstructor
 public class AwxProjectService {
 
-    private final AwxClient awxClient;
-
-    public List<ProjectInfo> listProjects() {
+    public static List<ProjectInfo> listProjects(AwxClient awxClient) {
         log.info("📋 Requesting projects from AWX");
         return awxClient.listProjects()
                 .doOnNext(response -> log.info("📊 Retrieved {} projects from AWX", response.getCount()))
@@ -27,7 +21,7 @@ public class AwxProjectService {
                 .block();
     }
     
-    public Optional<ProjectInfo> getProject(Integer id) {
+    public static Optional<ProjectInfo> getProject(AwxClient awxClient, Integer id) {
         log.info("🔍 Requesting project with ID {} from AWX", id);
         try {
             return Optional.ofNullable(
@@ -42,7 +36,7 @@ public class AwxProjectService {
         }
     }
     
-    public ProjectInfo createProject(Project project) {
+    public static ProjectInfo createProject(AwxClient awxClient, Project project) {
         log.info("🛠️ Creating project in AWX: {}", project.getName());
              
         return awxClient.createProject(project)
@@ -51,7 +45,7 @@ public class AwxProjectService {
                 .block();
     }
     
-    public boolean deleteProject(Integer id) {
+    public static boolean deleteProject(AwxClient awxClient, Integer id) {
         log.info("🗑️ Deleting project with ID {} from AWX", id);
         try {
             awxClient.deleteProject(id)
@@ -65,7 +59,7 @@ public class AwxProjectService {
         }
     }
 
-    public boolean deleteProjectWithRetry(Integer id) {
+    public static boolean deleteProjectWithRetry(AwxClient awxClient, Integer id) {
         log.info("🔄 Deleting project with ID {} from AWX (with retry)", id);
         try {
             RetryMono.of(

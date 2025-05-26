@@ -6,6 +6,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -36,12 +37,19 @@ public class RawClient {
     private AwxClient client;
 
     /**
-     * Creates a new RawClient with the given connection and builds the AWX client
+     * The exchange strategies used for the WebClient
+     */
+    private ExchangeStrategies exchangeStrategies;
+
+    /**
+     * Creates a new RawClient with the given connection and exchange strategies, and builds the AWX client
      * 
      * @param connection The connection information to use
+     * @param exchangeStrategies The exchange strategies to use for the WebClient
      */
-    public RawClient(Connection connection) {
+    public RawClient(Connection connection, ExchangeStrategies exchangeStrategies) {
         this.connection = connection;
+        this.exchangeStrategies = exchangeStrategies;
         this.client = buildClient();
     }
 
@@ -57,7 +65,8 @@ public class RawClient {
     
     private WebClient buildWebClient() {
         WebClient.Builder builder = WebClient.builder()
-                .baseUrl(connection.getUrl());
+                .baseUrl(connection.getUrl())
+                .exchangeStrategies(exchangeStrategies);
                 
         configureSsl(builder);
         configureAuthentication(builder);

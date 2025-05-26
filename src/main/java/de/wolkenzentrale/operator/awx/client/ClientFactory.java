@@ -3,8 +3,12 @@ package de.wolkenzentrale.operator.awx.client;
 import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.model.common.Connection;
 import de.wolkenzentrale.operator.awx.model.common.ConnectionKey;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -19,13 +23,11 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ClientFactory {
     private final ClientCache cache;
-    
-    public ClientFactory(ClientCache cache) {
-        this.cache = cache;
-    }
-    
+    private final ExchangeStrategies exchangeStrategies;
+    private final ObjectMapper objectMapper;
     /**
      * Updates the client cache to match the provided list of connections.
      * Creates new clients when needed and removes obsolete ones.
@@ -119,8 +121,13 @@ public class ClientFactory {
 
     private AwxClient createClient(Connection connection) {
         log.info("🌟 Creating new AWX client for {}", connection);
+
+        // Log the ObjectMapper configuration
+        log.info("🔧 Using ObjectMapper with property naming strategy: {}", 
+            objectMapper.getPropertyNamingStrategy() != null ? 
+            objectMapper.getPropertyNamingStrategy().getClass().getSimpleName() : "default");
         
-        RawClient rawClient = new RawClient(connection);
+        RawClient rawClient = new RawClient(connection, exchangeStrategies);
         cache.put(rawClient);
         
         return rawClient.getClient();
