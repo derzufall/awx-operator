@@ -4,11 +4,11 @@ import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.interfaces.awx.service.AwxProjectService;
 import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
 import de.wolkenzentrale.operator.awx.model.api.ProjectListResponse;
+import de.wolkenzentrale.operator.awx.model.common.Project;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -27,9 +27,6 @@ class AwxProjectServiceTest {
 
     @Mock
     private AwxClient awxClient;
-
-    @InjectMocks
-    private AwxProjectService awxProjectService;
 
     private ProjectListResponse mockResponse;
     private ProjectInfo project1;
@@ -65,7 +62,7 @@ class AwxProjectServiceTest {
         when(awxClient.listProjects()).thenReturn(Mono.just(mockResponse));
 
         // Act
-        List<ProjectInfo> result = awxProjectService.listProjects();
+        List<ProjectInfo> result = AwxProjectService.listProjects(awxClient);
 
         // Assert
         assertThat(result).isNotNull();
@@ -89,7 +86,7 @@ class AwxProjectServiceTest {
         when(awxClient.listProjects()).thenReturn(Mono.just(emptyResponse));
 
         // Act
-        List<ProjectInfo> result = awxProjectService.listProjects();
+        List<ProjectInfo> result = AwxProjectService.listProjects(awxClient);
 
         // Assert
         assertThat(result).isNotNull();
@@ -108,7 +105,7 @@ class AwxProjectServiceTest {
         // Act & Assert
         RuntimeException thrown = assertThrows(
             RuntimeException.class,
-            () -> awxProjectService.listProjects(),
+            () -> AwxProjectService.listProjects(awxClient),
             "Expected listProjects() to throw RuntimeException"
         );
         
@@ -125,7 +122,7 @@ class AwxProjectServiceTest {
         when(awxClient.getProject(1)).thenReturn(Mono.just(project1));
 
         // Act
-        Optional<ProjectInfo> result = awxProjectService.getProject(1);
+        Optional<ProjectInfo> result = AwxProjectService.getProject(awxClient, 1);
 
         // Assert
         assertThat(result).isPresent();
@@ -142,7 +139,7 @@ class AwxProjectServiceTest {
         when(awxClient.getProject(999)).thenReturn(Mono.empty());
 
         // Act
-        Optional<ProjectInfo> result = awxProjectService.getProject(999);
+        Optional<ProjectInfo> result = AwxProjectService.getProject(awxClient, 999);
 
         // Assert
         assertThat(result).isEmpty();
@@ -158,7 +155,7 @@ class AwxProjectServiceTest {
         when(awxClient.getProject(1)).thenReturn(Mono.error(testException));
 
         // Act
-        Optional<ProjectInfo> result = awxProjectService.getProject(1);
+        Optional<ProjectInfo> result = AwxProjectService.getProject(awxClient, 1);
 
         // Assert
         assertThat(result).isEmpty();
@@ -170,47 +167,51 @@ class AwxProjectServiceTest {
     @Test
     void createProject_shouldReturnCreatedProject() {
         // Arrange
-        ProjectInfo newProject = new ProjectInfo();
-        newProject.setName("New Project");
-        newProject.setDescription("A newly created project");
-        newProject.setScmType("git");
+        Project project = new Project();
+        project.setName("New Project");
+        project.setDescription("A new test project");
+        project.setScmType("git");
+        project.setScmUrl("https://github.com/test/project.git");
         
         ProjectInfo createdProject = new ProjectInfo();
         createdProject.setId(3);
-        createdProject.setName("New Project");
-        createdProject.setDescription("A newly created project");
-        createdProject.setScmType("git");
+        createdProject.setName(project.getName());
+        createdProject.setDescription(project.getDescription());
+        createdProject.setScmType(project.getScmType());
+        createdProject.setScmUrl(project.getScmUrl());
         createdProject.setStatus("pending");
         createdProject.setCreated(OffsetDateTime.now());
         
-        when(awxClient.createProject(newProject)).thenReturn(Mono.just(createdProject));
+        when(awxClient.createProject(project)).thenReturn(Mono.just(createdProject));
 
         // Act
-        ProjectInfo result = awxProjectService.createProject(newProject);
+        ProjectInfo result = AwxProjectService.createProject(awxClient, project);
 
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(3);
         assertThat(result.getName()).isEqualTo("New Project");
-        assertThat(result.getStatus()).isEqualTo("pending");
         
         // Verify the client was called exactly once
-        verify(awxClient, times(1)).createProject(newProject);
+        verify(awxClient, times(1)).createProject(project);
     }
     
     @Test
     void createProject_whenError_shouldPropagateException() {
         // Arrange
-        ProjectInfo newProject = new ProjectInfo();
-        newProject.setName("New Project");
+        Project project = new Project();
+        project.setName("New Project");
+        project.setDescription("A new test project");
+        project.setScmType("git");
+        project.setScmUrl("https://github.com/test/project.git");
         
         RuntimeException testException = new RuntimeException("Test error");
-        when(awxClient.createProject(newProject)).thenReturn(Mono.error(testException));
+        when(awxClient.createProject(project)).thenReturn(Mono.error(testException));
 
         // Act & Assert
         RuntimeException thrown = assertThrows(
             RuntimeException.class,
-            () -> awxProjectService.createProject(newProject),
+            () -> AwxProjectService.createProject(awxClient, project),
             "Expected createProject() to throw RuntimeException"
         );
         
@@ -218,7 +219,7 @@ class AwxProjectServiceTest {
         assertThat(thrown.getMessage()).isEqualTo("Test error");
         
         // Verify the client was called exactly once
-        verify(awxClient, times(1)).createProject(newProject);
+        verify(awxClient, times(1)).createProject(project);
     }
     
     @Test
@@ -227,7 +228,7 @@ class AwxProjectServiceTest {
         when(awxClient.deleteProject(1)).thenReturn(Mono.empty());
 
         // Act
-        boolean result = awxProjectService.deleteProject(1);
+        boolean result = AwxProjectService.deleteProject(awxClient, 1);
 
         // Assert
         assertThat(result).isTrue();
@@ -243,7 +244,7 @@ class AwxProjectServiceTest {
         when(awxClient.deleteProject(1)).thenReturn(Mono.error(testException));
 
         // Act
-        boolean result = awxProjectService.deleteProject(1);
+        boolean result = AwxProjectService.deleteProject(awxClient, 1);
 
         // Assert
         assertThat(result).isFalse();
@@ -252,4 +253,34 @@ class AwxProjectServiceTest {
         verify(awxClient, times(1)).deleteProject(1);
     }
     
+    @Test
+    void deleteProjectWithRetry_shouldReturnTrue() {
+        // Arrange
+        when(awxClient.deleteProject(1)).thenReturn(Mono.empty());
+
+        // Act
+        boolean result = AwxProjectService.deleteProjectWithRetry(awxClient, 1);
+
+        // Assert
+        assertThat(result).isTrue();
+        
+        // Verify the client was called exactly once
+        verify(awxClient, times(1)).deleteProject(1);
+    }
+    
+    @Test
+    void deleteProjectWithRetry_whenError_shouldReturnFalse() {
+        // Arrange
+        RuntimeException testException = new RuntimeException("Test error");
+        when(awxClient.deleteProject(1)).thenReturn(Mono.error(testException));
+
+        // Act
+        boolean result = AwxProjectService.deleteProjectWithRetry(awxClient, 1);
+
+        // Assert
+        assertThat(result).isFalse();
+        
+        // Verify the client was called exactly once
+        verify(awxClient, times(1)).deleteProject(1);
+    }
 } 

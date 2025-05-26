@@ -9,6 +9,7 @@ import org.springframework.web.service.annotation.PostExchange;
 
 import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
 import de.wolkenzentrale.operator.awx.model.api.ProjectListResponse;
+import de.wolkenzentrale.operator.awx.model.api.VersionInfo;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 import reactor.core.publisher.Mono;
 
@@ -26,4 +27,7 @@ public interface AwxClient {
     
     @DeleteExchange("/projects/{id}/")
     Mono<Void> deleteProject(@PathVariable("id") Integer id);
+
+    @GetExchange("/version/")
+    Mono<VersionInfo> getVersion();
 } 

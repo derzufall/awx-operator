@@ -4,8 +4,16 @@ awx:
   username: test-user
   password: test-password
 
+# OpenTelemetry test configuration
+otel:
+  traces:
+    exporter: none
+  metrics:
+    exporter: none
+
 # Logging configuration for tests
 logging:
   level:
     de.wolkenzentrale.operator.awx: DEBUG
     org.springframework.web.reactive: INFO
+    io.opentelemetry: INFO

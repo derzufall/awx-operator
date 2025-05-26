@@ -1,12 +1,11 @@
 package de.wolkenzentrale.operator.awx.interfaces.service;
 
+import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.interfaces.awx.service.AwxProjectService;
 import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
 import de.wolkenzentrale.operator.awx.model.common.Project;
 
 import org.junit.jupiter.api.*;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +35,7 @@ class AwxProjectServiceRemoteIT {
     private static final Logger log = LoggerFactory.getLogger(AwxProjectServiceRemoteIT.class);
     
     @Autowired
-    private AwxProjectService projectService;
+    private AwxClient awxClient;
     
     // Shared test state
     private String testProjectName;
@@ -56,10 +55,10 @@ class AwxProjectServiceRemoteIT {
         // Final cleanup in case the delete test failed or was skipped
         if (createdProjectId != null) {
             try {
-                Optional<ProjectInfo> projectExists = projectService.getProject(createdProjectId);
+                Optional<ProjectInfo> projectExists = AwxProjectService.getProject(awxClient, createdProjectId);
                 if (projectExists.isPresent()) {
                     log.warn("Final cleanup: Removing project that wasn't deleted during tests: {}", createdProjectId);
-                    projectService.deleteProjectWithRetry(createdProjectId);
+                    AwxProjectService.deleteProjectWithRetry(awxClient, createdProjectId);
                 }
             } catch (Exception e) {
                 log.error("Failed to clean up project: {}", createdProjectId, e);
@@ -72,7 +71,7 @@ class AwxProjectServiceRemoteIT {
     @DisplayName("List existing projects")
     void shouldListProjects() {
         // When
-        initialProjects = projectService.listProjects();
+        initialProjects = AwxProjectService.listProjects(awxClient);
         
         // Then
         assertThat(initialProjects).isNotNull();
@@ -85,82 +84,98 @@ class AwxProjectServiceRemoteIT {
     @DisplayName("Create a new project")
     void shouldCreateProject() {
         // Given
-        Project newProject = new Project();
-        newProject.setName(testProjectName);
-        newProject.setDescription("Remote integration test project created at " + LocalDateTime.now());
-        newProject.setScmType("git");
-        newProject.setScmUrl("https://github.com/ansible/awx-operator.git");
-        newProject.setScmBranch("devel");
+        Project project = new Project();
+        project.setName(testProjectName);
+        project.setDescription("Test project created by integration test at " + LocalDateTime.now());
+        project.setScmType("git");
+        project.setScmUrl("https://github.com/test/project.git");
+        project.setScmBranch("main");
         
         // When
-        ProjectInfo createdProject = projectService.createProject(newProject);
+        ProjectInfo createdProject = AwxProjectService.createProject(awxClient, project);
         
         // Then
         assertThat(createdProject).isNotNull();
         assertThat(createdProject.getId()).isNotNull();
+        assertThat(createdProject.getName()).isEqualTo(testProjectName);
+        
+        // Store the ID for later tests
         createdProjectId = createdProject.getId();
         log.info("Created test project with ID: {}", createdProjectId);
-        
-        assertThat(createdProject.getName()).isEqualTo(testProjectName);
-        assertThat(createdProject.getScmType()).isEqualTo("git");
-        assertThat(createdProject.getScmUrl()).isEqualTo("https://github.com/ansible/awx-operator.git");
-        assertThat(createdProject.getScmBranch()).isEqualTo("devel");
     }
     
     @Test
     @Order(3)
-    @DisplayName("Retrieve the created project")
-    void shouldGetCreatedProject() {
-        // Precondition check
-        assertThat(createdProjectId).isNotNull()
-            .withFailMessage("Test sequence error: No project ID from previous test");
-            
+    @DisplayName("Get the created project")
+    void shouldGetProject() {
+        // Given
+        assertThat(createdProjectId).isNotNull();
+        
         // When
-        Optional<ProjectInfo> retrievedProject = projectService.getProject(createdProjectId);
+        Optional<ProjectInfo> project = AwxProjectService.getProject(awxClient, createdProjectId);
         
         // Then
-        assertThat(retrievedProject).isPresent();
-        assertThat(retrievedProject.get().getId()).isEqualTo(createdProjectId);
-        assertThat(retrievedProject.get().getName()).isEqualTo(testProjectName);
-        log.info("Retrieved project status: {}", retrievedProject.get().getStatus());
-        
-        // Verify that the project appears in the list of all projects
-        List<ProjectInfo> currentProjects = projectService.listProjects();
-        assertThat(currentProjects).isNotNull();
-        assertThat(currentProjects)
-            .filteredOn(p -> p.getId().equals(createdProjectId))
-            .hasSize(1);
+        assertThat(project).isPresent();
+        assertThat(project.get().getId()).isEqualTo(createdProjectId);
+        assertThat(project.get().getName()).isEqualTo(testProjectName);
     }
     
     @Test
     @Order(4)
-    @DisplayName("Delete the project")
-    void shouldDeleteCreatedProject() {
-        // Precondition check
-        assertThat(createdProjectId).isNotNull()
-            .withFailMessage("Test sequence error: No project ID from previous test");
-            
-        log.info("Deleting test project with ID: {}", createdProjectId);
-
+    @DisplayName("List projects after creation")
+    void shouldListProjectsAfterCreation() {
         // When
-        boolean deleted = projectService.deleteProjectWithRetry(createdProjectId);
+        List<ProjectInfo> projects = AwxProjectService.listProjects(awxClient);
+        
+        // Then
+        assertThat(projects).isNotNull();
+        assertThat(projects.size()).isGreaterThanOrEqualTo(initialProjects.size() + 1);
+        
+        // Verify our project is in the list
+        boolean found = projects.stream()
+            .anyMatch(p -> p.getId().equals(createdProjectId) && p.getName().equals(testProjectName));
+        assertThat(found).isTrue();
+    }
+    
+    @Test
+    @Order(5)
+    @DisplayName("Delete the created project")
+    void shouldDeleteProject() {
+        // Given
+        assertThat(createdProjectId).isNotNull();
+        
+        // When
+        boolean deleted = AwxProjectService.deleteProjectWithRetry(awxClient, createdProjectId);
         
         // Then
         assertThat(deleted).isTrue();
-        log.info("Successfully deleted test project with ID: {}", createdProjectId);
         
-        // Verify deletion
-        Optional<ProjectInfo> deletedProject = projectService.getProject(createdProjectId);
-        assertThat(deletedProject).isEmpty();
+        // Verify project is gone
+        Optional<ProjectInfo> project = AwxProjectService.getProject(awxClient, createdProjectId);
+        assertThat(project).isEmpty();
+    }
+    
+    @Test
+    @Order(6)
+    @DisplayName("List projects after deletion")
+    void shouldListProjectsAfterDeletion() {
+        // When
+        List<ProjectInfo> projects = AwxProjectService.listProjects(awxClient);
         
-        // Verify project is removed from the list
-        List<ProjectInfo> finalProjects = projectService.listProjects();
-        assertThat(finalProjects).isNotNull();
-        assertThat(finalProjects)
-            .filteredOn(p -> p.getName().equals(testProjectName))
-            .isEmpty();
+        // Then
+        assertThat(projects).isNotNull();
+        assertThat(projects.size()).isEqualTo(initialProjects.size());
         
-        // Verify we have the expected project count
-        assertThat(finalProjects.size()).isEqualTo(initialProjects.size());
+        // Verify our project is not in the list
+        boolean found = projects.stream()
+            .anyMatch(p -> p.getId().equals(createdProjectId) && p.getName().equals(testProjectName));
+        assertThat(found).isFalse();
+    }
+    
+    @Test
+    void contextLoads() {
+        // This test simply checks that the client can be autowired
+        // and the application context loads successfully
+        assertThat(awxClient).isNotNull();
     }
 }

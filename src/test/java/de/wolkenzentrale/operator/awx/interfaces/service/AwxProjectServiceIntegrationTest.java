@@ -4,6 +4,7 @@ import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.interfaces.awx.service.AwxProjectService;
 import de.wolkenzentrale.operator.awx.model.api.ProjectInfo;
 import de.wolkenzentrale.operator.awx.model.api.ProjectListResponse;
+import de.wolkenzentrale.operator.awx.model.common.Project;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +27,6 @@ class AwxProjectServiceIntegrationTest {
 
     @MockBean
     private AwxClient awxClient;
-
-    @Autowired
-    private AwxProjectService projectService;
 
     @Test
     void shouldListProjects() {
@@ -56,7 +54,7 @@ class AwxProjectServiceIntegrationTest {
         when(awxClient.listProjects()).thenReturn(Mono.just(response));
 
         // When
-        List<ProjectInfo> projects = projectService.listProjects();
+        List<ProjectInfo> projects = AwxProjectService.listProjects(awxClient);
 
         // Then
         assertThat(projects).hasSize(2);
@@ -80,7 +78,7 @@ class AwxProjectServiceIntegrationTest {
         when(awxClient.getProject(1)).thenReturn(Mono.just(project));
 
         // When
-        Optional<ProjectInfo> result = projectService.getProject(1);
+        Optional<ProjectInfo> result = AwxProjectService.getProject(awxClient, 1);
 
         // Then
         assertThat(result).isPresent();
@@ -94,7 +92,7 @@ class AwxProjectServiceIntegrationTest {
         when(awxClient.getProject(999)).thenReturn(Mono.empty());
 
         // When
-        Optional<ProjectInfo> result = projectService.getProject(999);
+        Optional<ProjectInfo> result = AwxProjectService.getProject(awxClient, 999);
 
         // Then
         assertThat(result).isEmpty();
@@ -103,29 +101,31 @@ class AwxProjectServiceIntegrationTest {
     @Test
     void shouldCreateProject() {
         // Given
-        ProjectInfo newProject = new ProjectInfo();
-        newProject.setName("New Integration Project");
-        newProject.setDescription("A new project for integration testing");
-        newProject.setScmType("git");
+        Project project = new Project();
+        project.setName("New Integration Project");
+        project.setDescription("A new project for integration testing");
+        project.setScmType("git");
+        project.setScmUrl("https://github.com/test/project.git");
         
         ProjectInfo createdProject = new ProjectInfo();
         createdProject.setId(3);
-        createdProject.setName("New Integration Project");
-        createdProject.setDescription("A new project for integration testing");
-        createdProject.setScmType("git");
+        createdProject.setName(project.getName());
+        createdProject.setDescription(project.getDescription());
+        createdProject.setScmType(project.getScmType());
+        createdProject.setScmUrl(project.getScmUrl());
         createdProject.setStatus("pending");
         createdProject.setCreated(OffsetDateTime.now());
         
-        when(awxClient.createProject(newProject)).thenReturn(Mono.just(createdProject));
+        when(awxClient.createProject(project)).thenReturn(Mono.just(createdProject));
 
         // When
-        ProjectInfo result = projectService.createProject(newProject);
+        ProjectInfo result = AwxProjectService.createProject(awxClient, project);
 
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(3);
         assertThat(result.getName()).isEqualTo("New Integration Project");
-        verify(awxClient).createProject(newProject);
+        verify(awxClient).createProject(project);
     }
     
     @Test
@@ -134,7 +134,7 @@ class AwxProjectServiceIntegrationTest {
         when(awxClient.deleteProject(1)).thenReturn(Mono.empty());
 
         // When
-        boolean result = projectService.deleteProject(1);
+        boolean result = AwxProjectService.deleteProject(awxClient, 1);
 
         // Then
         assertThat(result).isTrue();
@@ -147,7 +147,33 @@ class AwxProjectServiceIntegrationTest {
         when(awxClient.deleteProject(999)).thenReturn(Mono.error(new RuntimeException("Not found")));
 
         // When
-        boolean result = projectService.deleteProject(999);
+        boolean result = AwxProjectService.deleteProject(awxClient, 999);
+
+        // Then
+        assertThat(result).isFalse();
+        verify(awxClient).deleteProject(999);
+    }
+    
+    @Test
+    void shouldDeleteProjectWithRetry() {
+        // Given
+        when(awxClient.deleteProject(1)).thenReturn(Mono.empty());
+
+        // When
+        boolean result = AwxProjectService.deleteProjectWithRetry(awxClient, 1);
+
+        // Then
+        assertThat(result).isTrue();
+        verify(awxClient).deleteProject(1);
+    }
+    
+    @Test
+    void shouldHandleDeleteWithRetryError() {
+        // Given
+        when(awxClient.deleteProject(999)).thenReturn(Mono.error(new RuntimeException("Not found")));
+
+        // When
+        boolean result = AwxProjectService.deleteProjectWithRetry(awxClient, 999);
 
         // Then
         assertThat(result).isFalse();
@@ -156,9 +182,8 @@ class AwxProjectServiceIntegrationTest {
     
     @Test
     void contextLoads() {
-        // This test simply checks that the service can be autowired
+        // This test simply checks that the client can be autowired
         // and the application context loads successfully
-        assertThat(projectService).isNotNull();
         assertThat(awxClient).isNotNull();
     }
 } 

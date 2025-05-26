@@ -1,30 +1,23 @@
 package de.wolkenzentrale.operator.awx.client;
 
-import de.wolkenzentrale.operator.awx.interfaces.awx.client.AwxClient;
 import de.wolkenzentrale.operator.awx.model.common.Connection;
+import de.wolkenzentrale.operator.awx.model.common.ConnectionKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for ClientFactory
@@ -33,124 +26,93 @@ import static org.mockito.Mockito.when;
 class ClientFactoryTest {
     
     @Mock
-    private AwxClient mockClient;
+    private ClientRegistry registry;
     
     @Mock
-    private WebClient mockWebClient;
+    private ExchangeStrategies exchangeStrategies;
     
-    @Spy
+    @Mock
+    private ObjectMapper objectMapper;
+    
     @InjectMocks
     private ClientFactory clientFactory;
     
-    private Connection connection;
+    private Connection testConnection;
+    private ConnectionKey testKey;
     
     @BeforeEach
     void setUp() {
-        connection = new Connection();
-        connection.setUrl("http://awx.example.com");
-        connection.setUsername("user");
-        connection.setPasswordSecretName("secret");
-        connection.setPasswordSecretKey("key");
-        connection.setInsecureSkipTlsVerify(false);
-        
-        // Mock the private createWebClient method
-        doReturn(mockWebClient).when(clientFactory).createWebClient(
-                any(), any(), any(), any());
-        
-        // Mock the proxy factory
-        setupHttpServiceProxyFactoryMock();
+        testConnection = Connection.builder()
+            .name("test-awx")
+            .namespace("default")
+            .url("https://awx.example.com")
+            .username("admin")
+            .password("secret-password")
+            .insecureSkipTlsVerify(false)
+            .build();
+        testKey = ConnectionKey.fromConnection(testConnection);
     }
     
     @Test
-    void createClient_CreatesNewClientWhenNotCached() {
+    void updateClients_CreatesNewClient() {
         // When
-        AwxClient result = clientFactory.createClient(connection, "new-client");
+        clientFactory.updateClients(Collections.singletonList(testConnection));
         
         // Then
-        assertThat(result).isNotNull();
-        
-        // Verify createWebClient called with correct parameters
-        verify(clientFactory).createWebClient(
-                "http://awx.example.com", 
-                "user", 
-                "placeholder-password", 
-                false);
+        verify(registry).put(any(RawClient.class));
+        verify(registry, never()).remove(any(ConnectionKey.class));
     }
     
     @Test
-    void createClient_ReusesCachedClient() {
+    void updateClients_RemovesObsoleteClient() {
         // Given
-        String clientId = "cached-client";
-        Map<String, AwxClient> clientMap = new ConcurrentHashMap<>();
-        clientMap.put(clientId, mockClient);
-        ReflectionTestUtils.setField(clientFactory, "clientMap", clientMap);
-        
-        // When called with the same ID
-        AwxClient result = clientFactory.createClient(connection, clientId);
-        
-        // Then
-        assertThat(result).isSameAs(mockClient);
-        
-        // Verify createWebClient not called
-        verify(clientFactory, times(0)).createWebClient(
-                any(), any(), any(), any());
-    }
-    
-    @Test
-    void removeClient_RemovesClientFromMap() {
-        // Given
-        String clientId = "client-to-remove";
-        Map<String, AwxClient> clientMap = new ConcurrentHashMap<>();
-        clientMap.put(clientId, mockClient);
-        ReflectionTestUtils.setField(clientFactory, "clientMap", clientMap);
+        Set<ConnectionKey> existingKeys = new HashSet<>(Arrays.asList(testKey));
+        when(registry.getKeys()).thenReturn(existingKeys);
         
         // When
-        clientFactory.removeClient(clientId);
+        clientFactory.updateClients(Collections.emptyList());
         
         // Then
-        Map<String, AwxClient> updatedMap = (Map<String, AwxClient>) 
-                ReflectionTestUtils.getField(clientFactory, "clientMap");
-        assertThat(updatedMap).isEmpty();
+        verify(registry).remove(testKey);
     }
     
     @Test
-    void clearAllClients_RemovesAllClientsFromMap() {
+    void updateClients_RecreatesUpdatedClient() {
         // Given
-        Map<String, AwxClient> clientMap = new ConcurrentHashMap<>();
-        clientMap.put("client1", mockClient);
-        clientMap.put("client2", mockClient);
-        ReflectionTestUtils.setField(clientFactory, "clientMap", clientMap);
+        Set<ConnectionKey> existingKeys = new HashSet<>(Arrays.asList(testKey));
+        when(registry.getKeys()).thenReturn(existingKeys);
+        when(registry.getConnection(testKey)).thenReturn(testConnection);
+        
+        // Create a modified connection
+        Connection modifiedConnection = Connection.builder()
+            .name(testConnection.getName())
+            .namespace(testConnection.getNamespace())
+            .url(testConnection.getUrl())
+            .username(testConnection.getUsername())
+            .password("new-password") // Changed password
+            .insecureSkipTlsVerify(testConnection.isInsecureSkipTlsVerify())
+            .build();
         
         // When
-        clientFactory.clearAllClients();
+        clientFactory.updateClients(Collections.singletonList(modifiedConnection));
         
         // Then
-        Map<String, AwxClient> updatedMap = (Map<String, AwxClient>) 
-                ReflectionTestUtils.getField(clientFactory, "clientMap");
-        assertThat(updatedMap).isEmpty();
+        verify(registry).remove(testKey);
+        verify(registry).put(any(RawClient.class));
     }
     
-    /**
-     * Helper to mock static HttpServiceProxyFactory builder
-     */
-    private void setupHttpServiceProxyFactoryMock() {
-        // We need to override private method through ReflectionTestUtils
-        try {
-            // Create utility method 
-            ClientFactory spyFactory = spy(ClientFactory.class);
-            ReflectionTestUtils.setField(clientFactory, "clientMap", new ConcurrentHashMap<>());
-            
-            // Mock the HTTP service proxy creation
-            HttpServiceProxyFactory mockFactory = mock(HttpServiceProxyFactory.class);
-            when(mockFactory.createClient(AwxClient.class)).thenReturn(mockClient);
-            
-            // Use ReflectionTestUtils to set up our test
-            ReflectionTestUtils.invokeMethod(clientFactory, "setHttpServiceProxyFactory", mockFactory);
-        } catch (Exception e) {
-            // Just use a simple approach if reflection doesn't work
-            Map<String, AwxClient> clientMap = new ConcurrentHashMap<>();
-            clientMap.put("new-client", mockClient);
-            ReflectionTestUtils.setField(clientFactory, "clientMap", clientMap);
-        }
+    @Test
+    void updateClients_KeepsUnchangedClient() {
+        // Given
+        Set<ConnectionKey> existingKeys = new HashSet<>(Arrays.asList(testKey));
+        when(registry.getKeys()).thenReturn(existingKeys);
+        when(registry.getConnection(testKey)).thenReturn(testConnection);
+        
+        // When
+        clientFactory.updateClients(Collections.singletonList(testConnection));
+        
+        // Then
+        verify(registry, never()).remove(testKey);
+        verify(registry, never()).put(any(RawClient.class));
     }
 } 

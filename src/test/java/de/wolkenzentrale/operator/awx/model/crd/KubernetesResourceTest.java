@@ -81,13 +81,16 @@ public class KubernetesResourceTest {
     @Test
     void testAwxConnectionResource() {
         // Given
-        Connection spec = new Connection();
-        spec.setUrl("https://awx.example.com");
-        spec.setUsername("admin");
-        spec.setPasswordSecretName("awx-creds");
-        spec.setPasswordSecretKey("password");
-        spec.setInsecureSkipTlsVerify(false);
-        
+        // Create a connection resource
+        Connection spec = Connection.builder()
+            .name("test-awx")
+            .namespace("default")
+            .url("https://awx.example.com")
+            .username("admin")
+            .password("secret-password")
+            .insecureSkipTlsVerify(false)
+            .build();
+
         AwxConnectionStatus status = new AwxConnectionStatus();
         status.setConnectionStatus("Connected");
         status.setMessage("Successfully connected to AWX instance");
@@ -116,8 +119,7 @@ public class KubernetesResourceTest {
         assertNotNull(connection.getSpec());
         assertEquals("https://awx.example.com", connection.getSpec().getUrl());
         assertEquals("admin", connection.getSpec().getUsername());
-        assertEquals("awx-creds", connection.getSpec().getPasswordSecretName());
-        assertEquals("password", connection.getSpec().getPasswordSecretKey());
+        assertEquals("secret-password", connection.getSpec().getPassword());
         assertFalse(connection.getSpec().isInsecureSkipTlsVerify());
         
         assertNotNull(connection.getStatus());
