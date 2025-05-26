@@ -1,5 +1,6 @@
 package de.wolkenzentrale.operator.awx.model.crd.status;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.wolkenzentrale.operator.awx.model.crd.kubernetes.ResourceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +17,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AwxConnectionStatus extends ResourceStatus {
     
     /**

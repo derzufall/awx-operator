@@ -1,5 +1,6 @@
 package de.wolkenzentrale.operator.awx.model.crd.kubernetes;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,11 +31,13 @@ public class StatusCondition {
     /**
      * Last time the condition status changed
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime lastTransitionTime;
     
     /**
      * Last time the condition was updated, even without status change
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime lastUpdateTime;
     
     /**

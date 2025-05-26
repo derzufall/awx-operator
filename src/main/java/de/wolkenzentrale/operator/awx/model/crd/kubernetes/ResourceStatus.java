@@ -1,5 +1,7 @@
 package de.wolkenzentrale.operator.awx.model.crd.kubernetes;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +20,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResourceStatus {
     
     /**
@@ -28,11 +31,13 @@ public class ResourceStatus {
     /**
      * Time when the resource was first successfully synchronized
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime firstSuccessfulSync;
     
     /**
      * Time of the last status update
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime lastUpdateTime;
     
     /**
