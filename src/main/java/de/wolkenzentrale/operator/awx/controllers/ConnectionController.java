@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -239,10 +240,18 @@ public class ConnectionController {
             Map<String, Object> patchBody = new HashMap<>();
             patchBody.put("status", status);
             
-            // Update using the status subresource with proper merge patch
-            customObjectsApi.patchNamespacedCustomObjectStatus(
-                GROUP, VERSION, namespace, PLURAL, name, patchBody
-            ).execute();
+            // Convert to JSON string for the patch
+            String patchJson = objectMapper.writeValueAsString(patchBody);
+            
+            // Use PatchUtils.patch() with buildCall pattern - working solution from GitHub issue
+            PatchUtils.patch(
+                Object.class,
+                () -> customObjectsApi.patchNamespacedCustomObjectStatus(
+                    GROUP, VERSION, namespace, PLURAL, name,
+                    new V1Patch(patchJson)).buildCall(null),
+                V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH,
+                apiClient
+            );
                 
             log.debug("✅ Status update completed for AWX Connection: {}/{}", namespace, name);
         } catch (Exception e) {
