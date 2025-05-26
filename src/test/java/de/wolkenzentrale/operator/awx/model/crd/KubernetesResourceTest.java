@@ -10,8 +10,6 @@ import de.wolkenzentrale.operator.awx.model.crd.kubernetes.KubernetesResource;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxConnectionStatus;
 import de.wolkenzentrale.operator.awx.model.crd.status.AwxProjectStatus;
 
-import java.time.OffsetDateTime;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
